@@ -125,6 +125,22 @@ def api_workers():
     
         return {'id': cur.lastrowid}, 201
 
+
+@app.route('/api/worker/<int:id>', methods=['GET', 'POST'])
+def api_worker(id):
+    if request.method == 'GET':
+        get_db().row_factory = make_dicts
+
+        cur = get_db().cursor()
+        cur.execute('SELECT * FROM worker WHERE id_worker = ?', (id,))
+
+        res = cur.fetchone()
+
+        if res is None:
+            return {'error': 'Not found'}, 404
+
+        return jsonify(res)
+
 if __name__=='__main__':
     init_db()
     app.run(host='0.0.0.0', port=8000, debug=True)
