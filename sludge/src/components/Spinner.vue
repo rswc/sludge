@@ -1,7 +1,8 @@
 <template>
-    <div class="d-flex justify-content-center">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
+    <div class="flex flex-center">
+        <q-spinner
+            color="primary"
+            size="3em"
+          />
     </div>
 </template>

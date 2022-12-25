@@ -8,9 +8,11 @@
     <div class="col">
         {{ employee.date_of_birth }}
     </div>
-    <div class="col">
-        <RouterLink class="btn btn-outline-primary mx-1" :to="editPath">Edit</RouterLink>
-        <button class="btn btn-outline-danger mx-1">Delete</button>
+    <div class="col actions">
+        <RouterLink :to="editPath" custom v-slot="{ navigate }">
+            <q-btn outline color="primary" @click="(navigate as any)">Edit</q-btn>
+        </RouterLink>
+        <q-btn outline color="negative">Delete</q-btn>
     </div>
 </template>
 
@@ -27,3 +29,9 @@ const editPath = computed(() => {
 })
 
 </script>
+
+<style scoped>
+.actions button {
+    margin: 2px 4px;
+}
+</style>

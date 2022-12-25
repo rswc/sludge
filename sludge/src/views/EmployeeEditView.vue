@@ -2,27 +2,42 @@
     <h1>Employee edit</h1>
     {{ $route.params.id }}
 
-    <form v-if="employee">
-        <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="form_empName" v-model="employee.name">
-            <label for="form_empName" class="form-label">Name</label>
-        </div>
-        <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="form_empSurname" v-model="employee.surname">
-            <label for="form_empSurname" class="form-label">Surname</label>
-        </div>
-        <div class="form-floating mb-3">
-            <input type="text" class="form-control" id="form_empTitle" v-model="employee.job_title">
-            <label for="form_empTitle" class="form-label">Job Title</label>
-        </div>
-        <div class="form-floating mb-3">
-            <input type="date" class="form-control" id="form_empBirth" v-model="employee.date_of_birth">
-            <label for="form_empBirth" class="form-label">Date of Birth</label>
-        </div>
-        <div class="form-floating mb-3">
-            <input type="date" class="form-control" id="form_empExpiration" v-model="employee.date_of_expiration">
-            <label for="form_empExpiration" class="form-label">Account expires by</label>
-        </div>
+    <form v-if="employee" class="q-gutter-md" style="max-width: 500px">
+        <q-input outlined v-model="(employee.name as any)" label="Name" />
+        <q-input outlined v-model="(employee.surname as any)" label="Surname" />
+        <q-input outlined v-model="(employee.job_title as any)" label="Job Title" />
+        <q-input outlined v-model="(employee.date_of_birth as any)" mask="date" :rules="['date']" label="Date of Birth">
+            <template v-slot:append>
+                <q-icon name="event" class="cursor-pointer">
+                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                    <q-date v-model="(employee.date_of_birth as any)">
+                    <div class="row items-center justify-end">
+                        <q-btn v-close-popup label="Close" color="primary" flat />
+                    </div>
+                    </q-date>
+                </q-popup-proxy>
+                </q-icon>
+            </template>
+        </q-input>
+        <q-input
+            outlined
+            v-model="(employee.date_of_expiration as any)"
+            mask="date"
+            :rules="[v => /^-?[\d]+\/[0-1]\d\/[0-3]\d$/.test(v) || v.length === 0 || 'Must be a valid date']"
+            label="Account expires by"
+        >
+            <template v-slot:append>
+                <q-icon name="event" class="cursor-pointer">
+                <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                    <q-date v-model="(employee.date_of_expiration as any)">
+                    <div class="row items-center justify-end">
+                        <q-btn v-close-popup label="Close" color="primary" flat />
+                    </div>
+                    </q-date>
+                </q-popup-proxy>
+                </q-icon>
+            </template>
+        </q-input>
     </form>
 
 </template>

@@ -1,6 +1,6 @@
 <template>
     <h1>Employees</h1>
-    <button class="btn btn-primary" @click="getEmployees">hello</button>
+    <q-btn color="primary" @click="getEmployees">hello</q-btn>
 
     <!-- Header -->
     <div class="row">
@@ -51,5 +51,7 @@ getEmployees()
 </script>
 
 <style>
-
+.fw-bold {
+    font-weight: bold;
+}
 </style>
