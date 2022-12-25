@@ -1,6 +1,6 @@
 <template>
     <h1>Employees</h1>
-    <button class="btn btn-primary">hello</button>
+    <button class="btn btn-primary" @click="getEmployees">hello</button>
 
     <!-- Header -->
     <div class="row">
@@ -18,6 +18,12 @@
         </div>
     </div>
 
+    <div class="d-flex justify-content-center" v-if="fetching">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
     <div class="row" v-for="emp in employees">
         <EmployeeRow :employee="emp" />
     </div>
@@ -25,26 +31,26 @@
 
 <script lang="ts" setup>
 import EmployeeRow from '@/components/EmployeeRow.vue';
+import type Employee from '@/types/employee';
 import { ref } from 'vue';
 
+const api_hostname = import.meta.env.VITE_API_HOSTNAME
 
-const employees = ref([
-    {
-        id: 0,
-        name: "Rob",
-        surname: "Banks",
-        date_of_birth: new Date(),
-        job_title: "Security Expert"
-    },
-    {
-        id: 0,
-        name: "Michael",
-        surname: "Jordan",
-        date_of_birth: new Date(),
-        job_title: "Baller"
-    }
-]);
+const employees = ref<Employee[]>([])
+const fetching = ref(true)
 
+const getEmployees = () => {
+    fetching.value = true
+
+    fetch(api_hostname + 'worker')
+        .then(response => response.json())
+        .then(response => {
+            employees.value = response
+            fetching.value = false
+        })
+}
+
+getEmployees()
 </script>
 
 <style>
