@@ -18,11 +18,7 @@
         </div>
     </div>
 
-    <div class="d-flex justify-content-center" v-if="fetching">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
+    <Spinner v-if="fetching" />
 
     <div class="row" v-for="emp in employees">
         <EmployeeRow :employee="emp" />
@@ -31,6 +27,7 @@
 
 <script lang="ts" setup>
 import EmployeeRow from '@/components/EmployeeRow.vue';
+import Spinner from '@/components/Spinner.vue';
 import type Employee from '@/types/employee';
 import { ref } from 'vue';
 
