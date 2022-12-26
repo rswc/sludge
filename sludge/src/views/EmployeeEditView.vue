@@ -2,10 +2,33 @@
     <h1>Employee edit</h1>
 
     <form v-if="employee" class="q-gutter-md" style="max-width: 500px" @submit.prevent="updateEmployee">
-        <q-input outlined v-model="(employee.name as any)" label="Name" />
-        <q-input outlined v-model="(employee.surname as any)" label="Surname" />
-        <q-input outlined v-model="(employee.job_title as any)" label="Job Title" />
-        <q-input outlined v-model="(employee.date_of_birth as any)" mask="date" :rules="['date']" label="Date of Birth">
+        <q-input
+            outlined
+            v-model="(employee.name as any)"
+            label="Name"
+            :error-message="v$.name.$error ? v$.name.$errors[0].$message.toString() : ''"
+            :error="v$.name.$error" />
+        <q-input
+            outlined
+            v-model="(employee.surname as any)"
+            label="Surname"
+            :error-message="v$.surname.$error ? v$.surname.$errors[0].$message.toString() : ''"
+            :error="v$.surname.$error" />
+        <q-input
+            outlined
+            v-model="(employee.job_title as any)"
+            label="Job Title"
+            :error-message="v$.job_title.$error ? v$.job_title.$errors[0].$message.toString() : ''"
+            :error="v$.job_title.$error" />
+        <q-input
+            outlined
+            v-model="(employee.date_of_birth as any)"
+            mask="date"
+            :rules="['date']"
+            label="Date of Birth"
+            :error-message="v$.date_of_birth.$error ? v$.date_of_birth.$errors[0].$message.toString() : ''"
+            :error="v$.date_of_birth.$error">
+
             <template v-slot:append>
                 <q-icon name="event" class="cursor-pointer">
                 <q-popup-proxy cover transition-show="scale" transition-hide="scale">
@@ -24,7 +47,9 @@
             mask="date"
             :rules="[v => /^-?[\d]+\/[0-1]\d\/[0-3]\d$/.test(v) || v.length === 0 || 'Must be a valid date']"
             label="Account expires by"
-        >
+            :error-message="v$.date_of_expiration.$error ? v$.date_of_expiration.$errors[0].$message.toString() : ''"
+            :error="v$.date_of_expiration.$error">
+
             <template v-slot:append>
                 <q-icon name="event" class="cursor-pointer">
                 <q-popup-proxy cover transition-show="scale" transition-hide="scale">
@@ -51,6 +76,8 @@
 import type Employee from '@/types/employee';
 import { ref } from 'vue';
 import { useRoute } from 'vue-router';
+import { useVuelidate } from '@vuelidate/core'
+import { required, helpers } from '@vuelidate/validators';
 
 const route = useRoute()
 
@@ -59,6 +86,18 @@ const api_hostname = import.meta.env.VITE_API_HOSTNAME
 const fetching = ref(true)
 const employee = ref<Employee|null>(null)
 const updating = ref(false)
+
+const validDate = (v: string) => !helpers.req(v) || /^-?[\d]+\/[0-1]\d\/[0-3]\d$/.test(v)
+
+const rules = {
+    name: { required },
+    surname: { required },
+    date_of_birth: { required, validDate },
+    date_of_expiration: { validDate },
+    job_title: { required }
+}
+
+const v$ = useVuelidate(rules, employee as any)
 
 const getEmployee = () => {
     fetching.value = true
@@ -71,10 +110,13 @@ const getEmployee = () => {
         })
 }
 
-const updateEmployee = () => {
+const updateEmployee = async () => {
     
     if (employee.value)
     {
+        const isFormCorrect = await v$.value.$validate()
+        if (!isFormCorrect) return
+
         updating.value = true
 
         fetch(`http://localhost:8000/api/worker/${employee.value.id_worker}`, {
