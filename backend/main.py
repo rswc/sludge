@@ -1,30 +1,16 @@
-import json
-import sqlite3 as sql
 from flask import Flask, render_template, g, request, jsonify
 from flask_cors import CORS
-
+from api.util import get_db
+from api.role import role_api
+from api.worker import worker_api
 
 app = Flask(__name__)
 CORS(app, resources=[r'/api/*'])
 
-def make_dicts(cursor, row):
-    return dict((cursor.description[idx][0], value)
-                for idx, value in enumerate(row))
 
-def parse_widget(widget: dict, media):
-    widget.update(json.loads(widget['options']))
-    del widget['options']
-    
-    if media is not None and media['id'] is not None:
-        widget['media'] = media
+app.register_blueprint(role_api)
+app.register_blueprint(worker_api)
 
-    return widget
-
-def get_db():
-    db = getattr(g, '_database', None)
-    if db is None:
-        db = g._database = sql.connect('database.db')
-    return db
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -47,118 +33,6 @@ def home():
 def assets(subpath):
     return app.send_static_file(f'assets/{subpath}')
 
-
-@app.route('/api/worker', methods=['GET', 'POST'])
-def api_workers():
-    if request.method == 'GET':
-        get_db().row_factory = make_dicts
-
-        cur = get_db().cursor()
-        cur.execute('SELECT * FROM worker')
-
-        res = cur.fetchall()
-
-        return jsonify(res)
-    
-    elif request.method == 'POST':
-        get_db().row_factory = make_dicts
-        req_json = request.get_json()
-        
-        cur = get_db().cursor()
-
-        try:
-            cur.execute('''
-                INSERT INTO worker 
-                (name, surname, date_of_birth, job_title, date_of_expiration, rolling_secret, rolling_counter, otp_secret)
-                VALUES (?, ?, ?, ?, ?, 0, 0, 0)
-                ''',
-                (
-                    req_json['name'],
-                    req_json['surname'],
-                    req_json['date_of_birth'],
-                    req_json['job_title'],
-                    req_json['date_of_expiration'],
-                ))
-            
-            get_db().commit()
-
-        except:
-            get_db().rollback()
-            raise
-    
-        return {'id_worker': cur.lastrowid}, 201
-
-
-@app.route('/api/worker/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
-def api_worker(id):
-    if request.method == 'GET':
-        get_db().row_factory = make_dicts
-
-        cur = get_db().cursor()
-        cur.execute('SELECT * FROM worker WHERE id_worker = ?', (id,))
-
-        res = cur.fetchone()
-
-        if res is None:
-            return {'error': 'Not found'}, 404
-
-        return jsonify(res)
-    
-    elif request.method == 'PATCH':
-        get_db().row_factory = make_dicts
-        req_json = request.get_json()
-
-        cur = get_db().cursor()
-
-        # Fetch current values
-        cur.execute('SELECT * FROM worker WHERE id_worker = ?', (id,))
-        res = cur.fetchone()
-
-        if res is None:
-            return {'error': 'Not found'}, 404
-
-        # Update potential new values, or leave old ones
-        try:
-            cur.execute('UPDATE worker SET (name, surname, date_of_birth, job_title, date_of_expiration) = (?, ?, ?, ?, ?) WHERE id_worker = ?',
-                (
-                    req_json['name'] if 'name' in req_json else res['name'],
-                    req_json['surname'] if 'surname' in req_json else res['surname'],
-                    req_json['date_of_birth'] if 'date_of_birth' in req_json else res['date_of_birth'],
-                    req_json['job_title'] if 'job_title' in req_json else res['job_title'],
-                    req_json['date_of_expiration'] if 'date_of_expiration' in req_json else res['date_of_expiration'],
-                    id
-                ))
-            
-            get_db().commit()
-
-        except:
-            get_db().rollback()
-            raise
-        
-        # Fetch updated values
-        cur.execute('SELECT * FROM worker WHERE id_worker = ?', (id,))
-
-        return jsonify(cur.fetchone())
-    
-    elif request.method == 'DELETE':
-        cur = get_db().cursor()
-
-        cur.execute('SELECT * FROM worker WHERE id_worker = ?', (id,))
-        res = cur.fetchone()
-
-        if res is None:
-            return {'error': 'Not found'}, 404
-        
-        try:
-            cur.execute('DELETE FROM worker WHERE id_worker = ?', (id,))
-            
-            get_db().commit()
-
-        except:
-            get_db().rollback()
-            raise
-
-        return {}, 200
 
 if __name__=='__main__':
     init_db()
