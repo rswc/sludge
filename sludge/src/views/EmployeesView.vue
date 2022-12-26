@@ -24,7 +24,7 @@
     <Spinner v-if="fetching" />
 
     <div class="row" v-for="emp in employees">
-        <EmployeeRow :employee="emp" />
+        <EmployeeRow :employee="emp" @deleted="getEmployees" />
     </div>
 </template>
 

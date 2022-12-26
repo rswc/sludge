@@ -89,7 +89,7 @@ def api_workers():
         return {'id_worker': cur.lastrowid}, 201
 
 
-@app.route('/api/worker/<int:id>', methods=['GET', 'PATCH'])
+@app.route('/api/worker/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
 def api_worker(id):
     if request.method == 'GET':
         get_db().row_factory = make_dicts
@@ -139,6 +139,26 @@ def api_worker(id):
         cur.execute('SELECT * FROM worker WHERE id_worker = ?', (id,))
 
         return jsonify(cur.fetchone())
+    
+    elif request.method == 'DELETE':
+        cur = get_db().cursor()
+
+        cur.execute('SELECT * FROM worker WHERE id_worker = ?', (id,))
+        res = cur.fetchone()
+
+        if res is None:
+            return {'error': 'Not found'}, 404
+        
+        try:
+            cur.execute('DELETE FROM worker WHERE id_worker = ?', (id,))
+            
+            get_db().commit()
+
+        except:
+            get_db().rollback()
+            raise
+
+        return {}, 200
 
 if __name__=='__main__':
     init_db()
