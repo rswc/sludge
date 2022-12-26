@@ -63,6 +63,29 @@
             </template>
         </q-input>
 
+        <q-select
+            outlined
+            v-model="employee.roles"
+            multiple
+            :options="allRoles"
+            option-label="name"
+            label="Roles"
+            use-chips
+            stack-label>
+            <template v-slot:selected-item="scope">
+                <q-chip
+                    removable
+                    dense
+                    square
+                    @remove="scope.removeAtIndex(scope.index)"
+                    :tabindex="scope.tabindex"
+                    :style="chipStyle(scope.opt.color)"
+                    class="q-ma-xs">
+                    {{ scope.opt.name }}
+                </q-chip>
+            </template>
+        </q-select>
+
         <q-btn color="primary" type="submit" label="Save" :loading="updating" :disable="updating">
             <template v-slot:loading>
                 <q-spinner />
@@ -78,7 +101,8 @@ import { onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useVuelidate } from '@vuelidate/core'
 import { required, helpers } from '@vuelidate/validators';
-import { useQuasar } from 'quasar';
+import { useQuasar, colors } from 'quasar';
+import type Role from '@/types/role';
 
 const router = useRouter()
 const route = useRoute()
@@ -86,6 +110,7 @@ const route = useRoute()
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
 
 const fetching = ref(true)
+const updating = ref(false)
 const employee = ref<Employee>(new class implements Employee {
     id_worker = -1
     name = ''
@@ -94,7 +119,7 @@ const employee = ref<Employee>(new class implements Employee {
     date_of_expiration = ''
     job_title = ''
 }())
-const updating = ref(false)
+const allRoles = ref<Role[]>([])
 
 const $q = useQuasar()
 
@@ -109,6 +134,21 @@ const rules = {
 }
 
 const v$ = useVuelidate(rules, employee as any)
+
+const chipStyle = (color: string) => {
+    return {
+        'background-color': color,
+        color: colors.luminosity(color) > 0.5 ? '#000' : '#FFF'
+    }
+}
+
+const getRoles = () => {
+    fetch(api_hostname + 'role')
+        .then(response => response.json())
+        .then(response => {
+            allRoles.value = response
+        })
+}
 
 const getEmployee = (id: Number | string) => {
     fetching.value = true
@@ -191,5 +231,7 @@ const formSubmit = () => {
 onMounted(() => {
     if (route.params.id !== 'add')
         getEmployee(route.params.id as string)
+    
+    getRoles()
 })
 </script>

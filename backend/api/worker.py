@@ -13,6 +13,16 @@ def api_workers():
 
         res = cur.fetchall()
 
+        for worker in res:
+            cur.execute(
+                '''SELECT role.id_role AS id_role, role.name AS name, role.color AS color
+                FROM worker JOIN roleOfWorker USING(id_worker) JOIN role USING(id_role)
+                WHERE id_worker = ?''', 
+                (worker['id_worker'],)
+            )
+
+            worker['roles'] = cur.fetchall()
+
         return jsonify(res)
     
     elif request.method == 'POST':
@@ -54,6 +64,15 @@ def api_worker(id):
 
         res = cur.fetchone()
 
+        cur.execute(
+            '''SELECT role.id_role AS id_role, role.name AS name, role.color AS color
+            FROM worker JOIN roleOfWorker USING(id_worker) JOIN role USING(id_role)
+            WHERE id_worker = ?''', 
+            (id,)
+        )
+
+        res['roles'] = cur.fetchall()
+
         if res is None:
             return {'error': 'Not found'}, 404
 
@@ -71,6 +90,20 @@ def api_worker(id):
 
         if res is None:
             return {'error': 'Not found'}, 404
+        
+        # If request contains the 'roles' field, fetch those as well
+        roles = []
+        req_roles = []
+        if 'roles' in req_json:
+            cur.execute(
+                '''SELECT roleOfWorker.id_role AS id_role
+                FROM worker JOIN roleOfWorker USING(id_worker)
+                WHERE id_worker = ?''', 
+                (id,)
+            )
+
+            roles = [role['id_role'] for role in cur.fetchall()]
+            req_roles = [role['id_role'] for role in req_json['roles']]
 
         # Update potential new values, or leave old ones
         try:
@@ -83,6 +116,19 @@ def api_worker(id):
                     req_json['date_of_expiration'] if 'date_of_expiration' in req_json else res['date_of_expiration'],
                     id
                 ))
+            
+            # Only modify roles if the request mentions them
+            if 'roles' in req_json:
+
+                # If role is assigned to worker in the database, but not in the request, remove it 
+                for role in roles:
+                    if role not in req_roles:
+                        cur.execute('DELETE FROM roleOfWorker WHERE id_worker = ? AND id_role = ?', (id, role))
+                
+                # If role is not assigned to worker in the database, but is in the request, add it 
+                for role in req_roles:
+                    if role not in roles:
+                        cur.execute('INSERT INTO roleOfWorker (id_worker, id_role) VALUES  (?, ?)', (id, role))
             
             get_db().commit()
 

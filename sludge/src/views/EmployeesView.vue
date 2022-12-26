@@ -16,6 +16,9 @@
         <div class="col fw-bold">
             Date of Birth
         </div>
+        <div class="col-4 fw-bold">
+            Roles
+        </div>
         <div class="col fw-bold">
             Actions
         </div>
@@ -24,7 +27,7 @@
     <Spinner v-if="fetching" />
 
     <div class="row" v-for="emp in employees">
-        <EmployeeRow :employee="emp" @deleted="getEmployees" />
+        <EmployeeRow :employee="emp" :role-options="allRoles" @deleted="getEmployees" />
     </div>
 </template>
 
@@ -32,11 +35,13 @@
 import EmployeeRow from '@/components/EmployeeRow.vue';
 import Spinner from '@/components/Spinner.vue';
 import type Employee from '@/types/employee';
-import { ref } from 'vue';
+import type Role from '@/types/role';
+import { onMounted, ref } from 'vue';
 
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
 
 const employees = ref<Employee[]>([])
+const allRoles = ref<Role[]>([])
 const fetching = ref(true)
 
 const getEmployees = () => {
@@ -50,5 +55,16 @@ const getEmployees = () => {
         })
 }
 
-getEmployees()
+const getRoles = () => {
+    fetch(api_hostname + 'role')
+        .then(response => response.json())
+        .then(response => {
+            allRoles.value = response
+        })
+}
+
+onMounted(() => {
+    getEmployees()
+    getRoles()
+})
 </script>
