@@ -1,8 +1,7 @@
 <template>
     <h1>Employee edit</h1>
-    {{ $route.params.id }}
 
-    <form v-if="employee" class="q-gutter-md" style="max-width: 500px">
+    <form v-if="employee" class="q-gutter-md" style="max-width: 500px" @submit.prevent="updateEmployee">
         <q-input outlined v-model="(employee.name as any)" label="Name" />
         <q-input outlined v-model="(employee.surname as any)" label="Surname" />
         <q-input outlined v-model="(employee.job_title as any)" label="Job Title" />
@@ -38,6 +37,12 @@
                 </q-icon>
             </template>
         </q-input>
+
+        <q-btn color="primary" type="submit" label="Save" :loading="updating" :disable="updating">
+            <template v-slot:loading>
+                <q-spinner />
+            </template>
+        </q-btn>
     </form>
 
 </template>
@@ -53,6 +58,7 @@ const api_hostname = import.meta.env.VITE_API_HOSTNAME
 
 const fetching = ref(true)
 const employee = ref<Employee|null>(null)
+const updating = ref(false)
 
 const getEmployee = () => {
     fetching.value = true
@@ -63,6 +69,29 @@ const getEmployee = () => {
             employee.value = response
             fetching.value = false
         })
+}
+
+const updateEmployee = () => {
+    
+    if (employee.value)
+    {
+        updating.value = true
+
+        fetch(`http://localhost:8000/api/worker/${employee.value.id_worker}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(employee.value)
+        })
+            .then(response => response.json())
+            .then(response => {
+                updating.value = false
+
+                console.log(response);
+                
+            })
+    }
 }
 
 getEmployee()

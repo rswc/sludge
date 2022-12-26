@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS worker (
     id_worker INTEGER PRIMARY KEY DEFAULT 0,
     `name` TEXT NOT NULL,
-    suname TEXT NOT NULL,
+    surname TEXT NOT NULL,
     date_of_birth DATE NOT NULL,
     job_title TEXT NOT NULL,
     date_of_expiration DATE,
