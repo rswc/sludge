@@ -1,7 +1,7 @@
 <template>
     <h1>Employee edit</h1>
 
-    <form v-if="employee" class="q-gutter-md" style="max-width: 500px" @submit.prevent="updateEmployee">
+    <form v-if="employee" class="q-gutter-md" style="max-width: 500px" @submit.prevent="formSubmit">
         <q-input
             outlined
             v-model="(employee.name as any)"
@@ -68,24 +68,36 @@
                 <q-spinner />
             </template>
         </q-btn>
+        {{ route.params }}
     </form>
 
 </template>
 
 <script lang="ts" setup>
 import type Employee from '@/types/employee';
-import { ref } from 'vue';
-import { useRoute } from 'vue-router';
+import { onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useVuelidate } from '@vuelidate/core'
 import { required, helpers } from '@vuelidate/validators';
+import { useQuasar } from 'quasar';
 
+const router = useRouter()
 const route = useRoute()
 
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
 
 const fetching = ref(true)
-const employee = ref<Employee|null>(null)
+const employee = ref<Employee>(new class implements Employee {
+    id_worker = -1
+    name = ''
+    surname = ''
+    date_of_birth = ''
+    date_of_expiration = ''
+    job_title = ''
+}())
 const updating = ref(false)
+
+const $q = useQuasar()
 
 const validDate = (v: string) => !helpers.req(v) || /^-?[\d]+\/[0-1]\d\/[0-3]\d$/.test(v)
 
@@ -99,10 +111,10 @@ const rules = {
 
 const v$ = useVuelidate(rules, employee as any)
 
-const getEmployee = () => {
+const getEmployee = (id: Number | string) => {
     fetching.value = true
 
-    fetch(api_hostname + 'worker/' + route.params.id)
+    fetch(`${api_hostname}worker/${id}`)
         .then(response => response.json())
         .then(response => {
             employee.value = response
@@ -110,8 +122,7 @@ const getEmployee = () => {
         })
 }
 
-const updateEmployee = async () => {
-    
+const updateEmployee = async () => { 
     if (employee.value)
     {
         const isFormCorrect = await v$.value.$validate()
@@ -119,7 +130,7 @@ const updateEmployee = async () => {
 
         updating.value = true
 
-        fetch(`http://localhost:8000/api/worker/${employee.value.id_worker}`, {
+        fetch(`${api_hostname}worker/${employee.value.id_worker}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json"
@@ -130,11 +141,56 @@ const updateEmployee = async () => {
             .then(response => {
                 updating.value = false
 
-                console.log(response);
-                
+                $q.notify({
+                    type: 'positive',
+                    position: 'bottom-right',
+                    message: 'Saved'
+                })
             })
     }
 }
 
-getEmployee()
+const createEmployee = async () => {
+    const isFormCorrect = await v$.value.$validate()
+    if (!isFormCorrect) return
+
+    updating.value = true
+
+    fetch(`${api_hostname}worker`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(employee.value)
+    })
+        .then(response => response.json())
+        .then(response => {
+            updating.value = false
+            
+            if (response.hasOwnProperty('id_worker')) {
+                $q.notify({
+                    type: 'positive',
+                    position: 'bottom-right',
+                    message: 'Employee added'
+                })
+                
+                router.push({name: 'employee', params: {id: response.id_worker}})
+
+                getEmployee(response.id_worker)
+            }
+        })
+}
+
+const formSubmit = () => {
+    if (route.params.id === 'add') {
+        createEmployee()
+    } else {
+        updateEmployee()
+    }
+}
+
+onMounted(() => {
+    if (route.params.id !== 'add')
+        getEmployee(route.params.id as string)
+})
 </script>

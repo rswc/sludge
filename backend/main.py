@@ -67,55 +67,18 @@ def api_workers():
         cur = get_db().cursor()
 
         try:
-            cur.execute('INSERT INTO profiles (name) VALUES (?)',
+            cur.execute('''
+                INSERT INTO worker 
+                (name, surname, date_of_birth, job_title, date_of_expiration, rolling_secret, rolling_counter, otp_secret)
+                VALUES (?, ?, ?, ?, ?, 0, 0, 0)
+                ''',
                 (
-                    req_json['name'] if 'name' in req_json else None,
+                    req_json['name'],
+                    req_json['surname'],
+                    req_json['date_of_birth'],
+                    req_json['job_title'],
+                    req_json['date_of_expiration'],
                 ))
-            
-            if 'widgets' in req_json:
-                profile_id = cur.lastrowid
-                
-                rows = []
-                for widget in req_json['widgets']:
-                    if 'media' in widget:
-                        cur.execute('SELECT * FROM media WHERE (type, platform, key) = (?, ?, ?)', 
-                            (
-                                widget['media']['type'],
-                                widget['media']['platform'],
-                                widget['media']['key']
-                            ))
-                        res = cur.fetchone()
-
-                        if res is None:
-                            cur.execute('INSERT INTO media (type, platform, key) VALUES (?, ?, ?)',
-                            (
-                                widget['media']['type'],
-                                widget['media']['platform'],
-                                widget['media']['key']
-                            ))
-
-                            media = cur.lastrowid
-                        
-                        else:
-                            media = res['id']
-                        
-                        del widget['media']
-                
-                    if 'added' in widget:
-                        del widget['added']
-                
-                    if 'edited' in widget:
-                        del widget['edited']
-                
-                    if 'id' in widget:
-                        del widget['id']
-                    
-                    if 'template' in widget and widget['template'] == 'player' and 'keybindings' not in widget:
-                        widget['keybindings'] = {'play': None}
-                    
-                    rows.append((str(profile_id), str(media), json.dumps(widget)))
-                
-                cur.executemany('INSERT INTO widgets (profile, media, options) VALUES (?, ?, ?)', rows)
             
             get_db().commit()
 
@@ -123,7 +86,7 @@ def api_workers():
             get_db().rollback()
             raise
     
-        return {'id': cur.lastrowid}, 201
+        return {'id_worker': cur.lastrowid}, 201
 
 
 @app.route('/api/worker/<int:id>', methods=['GET', 'PATCH'])

@@ -1,6 +1,9 @@
 <template>
     <h1>Employees</h1>
-    <q-btn color="primary" @click="getEmployees">hello</q-btn>
+    <q-btn color="primary" @click="getEmployees">Refresh</q-btn>
+    <RouterLink to="/employees/add" custom v-slot="{ navigate }">
+        <q-btn color="primary" @click="(navigate as any)">New Employee</q-btn>
+    </RouterLink>
 
     <!-- Header -->
     <div class="row">
