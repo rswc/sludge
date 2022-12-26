@@ -52,9 +52,3 @@ const getEmployees = () => {
 
 getEmployees()
 </script>
-
-<style>
-.fw-bold {
-    font-weight: bold;
-}
-</style>

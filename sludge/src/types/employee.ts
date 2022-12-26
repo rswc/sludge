@@ -1,8 +1,8 @@
 export default interface Employee {
     id_worker: Number,
-    name: String,
-    surname: String,
-    date_of_birth: String,
-    date_of_expiration: String,
-    job_title: String
+    name: string,
+    surname: string,
+    date_of_birth: string,
+    date_of_expiration: string,
+    job_title: string
 }

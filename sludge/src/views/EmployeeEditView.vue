@@ -68,7 +68,6 @@
                 <q-spinner />
             </template>
         </q-btn>
-        {{ route.params }}
     </form>
 
 </template>
