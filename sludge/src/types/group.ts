@@ -1,5 +1,5 @@
 export default interface Group {
-    id_group: Number,
+    id_group: number,
     name: string,
-    severity: Number
+    severity: number
 }

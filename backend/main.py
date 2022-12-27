@@ -4,6 +4,7 @@ from api.util import get_db
 from api.role import role_api
 from api.worker import worker_api
 from api.group import group_api
+from api.resource import resource_api
 
 app = Flask(__name__)
 CORS(app, resources=[r'/api/*'])
@@ -12,6 +13,7 @@ CORS(app, resources=[r'/api/*'])
 app.register_blueprint(role_api)
 app.register_blueprint(worker_api)
 app.register_blueprint(group_api)
+app.register_blueprint(resource_api)
 
 
 @app.teardown_appcontext

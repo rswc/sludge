@@ -1,7 +1,7 @@
 import type Role from "./role";
 
 export default interface Employee {
-    id_worker: Number,
+    id_worker: number,
     name: string,
     surname: string,
     date_of_birth: string,
