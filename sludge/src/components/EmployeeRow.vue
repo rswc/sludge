@@ -136,9 +136,3 @@ const updateRoles = async () => {
             })
 }
 </script>
-
-<style scoped>
-.actions button {
-    margin: 2px 4px;
-}
-</style>

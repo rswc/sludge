@@ -1,57 +1,52 @@
 <template>
-   <template v-if="editing">
-        <div class="col q-gutter-md">
-            <div class="row q-gutter-sm">
+    <template v-if="editing">
+         <div class="col q-gutter-md">
+             <div class="row q-gutter-sm">
                 <q-input
                     outlined
-                    v-model="(role.name as any)"
+                    v-model="group.name"
                     label="Name"
                     :error-message="v$.name.$error ? v$.name.$errors[0].$message.toString() : ''"
                     :error="v$.name.$error" />
-    
+     
                 <q-input
                     outlined
-                    v-model="role.color"
-                    label="Color"
-                    :error-message="v$.color.$error ? v$.color.$errors[0].$message.toString() : ''"
-                    :error="v$.color.$error">
-                    <template v-slot:append>
-                        <q-icon name="colorize" class="cursor-pointer">
-                            <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                            <q-color v-model="role.color" />
-                            </q-popup-proxy>
-                        </q-icon>
-                    </template>
-                </q-input>
-            </div>
+                    v-model.number="(group.severity as any)"
+                    type="number"
+                    label="Severity"
+                    :error-message="v$.severity.$error ? v$.severity.$errors[0].$message.toString() : ''"
+                    :error="v$.severity.$error" />
+             </div>
+         </div>
+         <div class="col">
+             <q-btn color="primary" type="submit" label="Save" :loading="updating" :disable="updating" @click="updateGroup">
+                 <template v-slot:loading>
+                     <q-spinner />
+                 </template>
+             </q-btn>
+         </div>
+     </template>
+     <template v-else>
+        <div class="col">
+            {{ group.name }}
         </div>
         <div class="col">
-            <q-btn color="primary" type="submit" label="Save" :loading="updating" :disable="updating" @click="updateRole">
-                <template v-slot:loading>
-                    <q-spinner />
-                </template>
-            </q-btn>
-        </div>
-    </template>
-    <template v-else>
-        <div class="col">
-            <q-chip square :style="chipStyle" :ripple="false">
-                {{ role.name }}
-            </q-chip>
+            {{ group.severity }}
         </div>
         <div class="col actions">
             <q-btn outline color="primary" @click="editing = true">Edit</q-btn>
-            <q-btn outline color="negative" @click="deleteRole" :disable="updating">Delete</q-btn>
+            <q-btn outline color="negative" @click="deleteGroup" :disable="updating">Delete</q-btn>
         </div>
-    </template>
-</template>
+     </template>
+ </template>
+
 
 <script lang="ts" setup>
-import type Role from '@/types/role';
+import type Group from '@/types/group';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
-import { useQuasar, colors } from 'quasar';
-import { computed, ref } from 'vue';
+import { useQuasar } from 'quasar';
+import { ref } from 'vue';
 
 const $q = useQuasar()
 
@@ -59,33 +54,26 @@ const updating = ref(false)
 const editing = ref(false)
 
 const props = defineProps<{
-    role: Role
+    group: Group
 }>()
 
 const emit = defineEmits(['deleted'])
 
-const chipStyle = computed(() => {
-    return {
-        'background-color': props.role.color,
-        color: colors.luminosity(props.role.color) > 0.5 ? '#000' : '#FFF'
-    }
-})
-
 const rules = {
     name: { required },
-    color: { required }
+    severity: { required }
 }
 
-const v$ = useVuelidate(rules, props.role)
+const v$ = useVuelidate(rules, props.group)
 
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
 
-const deleteRole = async () => { 
-    if (props.role)
+const deleteGroup = async () => { 
+    if (props.group)
     {
         updating.value = true
 
-        fetch(`${api_hostname}role/${props.role.id_role}`, {
+        fetch(`${api_hostname}group/${props.group.id_group}`, {
             method: "DELETE"
         })
             .then(response => {
@@ -95,7 +83,7 @@ const deleteRole = async () => {
                     $q.notify({
                         type: 'positive',
                         position: 'bottom-right',
-                        message: 'Role deleted'
+                        message: 'Group deleted'
                     })
                     
                     emit('deleted')
@@ -104,7 +92,7 @@ const deleteRole = async () => {
                     $q.notify({
                         type: 'negative',
                         position: 'bottom-right',
-                        message: 'Could not delete role'
+                        message: 'Could not delete group'
                     })
             })
             .catch(() => {
@@ -117,17 +105,17 @@ const deleteRole = async () => {
     }
 }
 
-const updateRole = async () => {
-    if (props.role)
+const updateGroup = async () => {
+    if (props.group)
     {
         updating.value = true
 
-        fetch(`${api_hostname}role/${props.role.id_role}`, {
+        fetch(`${api_hostname}group/${props.group.id_group}`, {
             method: "PATCH",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify(props.role)
+            body: JSON.stringify(props.group)
         })
             .then(response => {
                 updating.value = false
@@ -137,14 +125,14 @@ const updateRole = async () => {
                     $q.notify({
                         type: 'positive',
                         position: 'bottom-right',
-                        message: 'Role updated'
+                        message: 'Group updated'
                     })
 
                 } else
                     $q.notify({
                         type: 'negative',
                         position: 'bottom-right',
-                        message: 'Could not update role'
+                        message: 'Could not update group'
                     })
             })
             .catch(() => {

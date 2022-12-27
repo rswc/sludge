@@ -23,3 +23,7 @@ a,
 .fw-bold {
   font-weight: bold;
 }
+
+.actions button {
+  margin: 2px 4px;
+}

@@ -3,6 +3,7 @@ from flask_cors import CORS
 from api.util import get_db
 from api.role import role_api
 from api.worker import worker_api
+from api.group import group_api
 
 app = Flask(__name__)
 CORS(app, resources=[r'/api/*'])
@@ -10,6 +11,7 @@ CORS(app, resources=[r'/api/*'])
 
 app.register_blueprint(role_api)
 app.register_blueprint(worker_api)
+app.register_blueprint(group_api)
 
 
 @app.teardown_appcontext
