@@ -97,6 +97,13 @@ const deleteEmployee = async () => {
                         message: 'Could not delete employee'
                     })
             })
+            .catch(() => {
+                $q.notify({
+                    type: 'negative',
+                    position: 'bottom-right',
+                    message: 'An error occured. Please try again later'
+                })
+            })
     }
 }
 
@@ -118,6 +125,13 @@ const updateRoles = async () => {
                     type: 'positive',
                     position: 'bottom-right',
                     message: 'Saved'
+                })
+            })
+            .catch(() => {
+                $q.notify({
+                    type: 'negative',
+                    position: 'bottom-right',
+                    message: 'An error occured. Please try again later'
                 })
             })
 }

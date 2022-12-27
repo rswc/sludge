@@ -159,6 +159,13 @@ const getEmployee = (id: Number | string) => {
             employee.value = response
             fetching.value = false
         })
+        .catch(() => {
+            $q.notify({
+                type: 'negative',
+                position: 'bottom-right',
+                message: 'An error occured. Please try again later'
+            })
+        })
 }
 
 const updateEmployee = async () => { 
@@ -184,6 +191,13 @@ const updateEmployee = async () => {
                     type: 'positive',
                     position: 'bottom-right',
                     message: 'Saved'
+                })
+            })
+            .catch(() => {
+                $q.notify({
+                    type: 'negative',
+                    position: 'bottom-right',
+                    message: 'An error occured. Please try again later'
                 })
             })
     }
@@ -217,6 +231,13 @@ const createEmployee = async () => {
 
                 getEmployee(response.id_worker)
             }
+        })
+        .catch(() => {
+            $q.notify({
+                type: 'negative',
+                position: 'bottom-right',
+                message: 'An error occured. Please try again later'
+            })
         })
 }
 

@@ -36,9 +36,12 @@ import EmployeeRow from '@/components/EmployeeRow.vue';
 import Spinner from '@/components/Spinner.vue';
 import type Employee from '@/types/employee';
 import type Role from '@/types/role';
+import { useQuasar } from 'quasar';
 import { onMounted, ref } from 'vue';
 
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
+
+const $q = useQuasar()
 
 const employees = ref<Employee[]>([])
 const allRoles = ref<Role[]>([])
@@ -52,6 +55,13 @@ const getEmployees = () => {
         .then(response => {
             employees.value = response
             fetching.value = false
+        })
+        .catch(() => {
+            $q.notify({
+                type: 'negative',
+                position: 'bottom-right',
+                message: 'An error occured. Please try again later'
+            })
         })
 }
 

@@ -88,6 +88,13 @@ const getRoles = () => {
             roles.value = response
             fetching.value = false
         })
+        .catch(() => {
+            $q.notify({
+                type: 'negative',
+                position: 'bottom-right',
+                message: 'An error occured. Please try again later'
+            })
+        })
 }
 
 const addRole = async () => {
@@ -127,6 +134,13 @@ const addRole = async () => {
                     })
                 })
             }
+        })
+        .catch(() => {
+            $q.notify({
+                type: 'negative',
+                position: 'bottom-right',
+                message: 'An error occured. Please try again later'
+            })
         })
 }
 
