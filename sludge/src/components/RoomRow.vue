@@ -3,23 +3,29 @@
         expand-separator
         icon="place"
         default-opened
+        @before-show="getRoom"
         :label="room.name">
         <q-card>
             <q-card-actions>
                 <q-btn color="primary" flat @click="editClicked">Edit</q-btn>
-                <q-btn color="primary" flat>Add door</q-btn>
+                <q-btn color="primary" flat @click="emit('addDoor', room.id_room)">Add door</q-btn>
                 <q-btn color="primary" flat>Add access point</q-btn>
                 <q-btn color="negative" flat @click="deleteRoom">Delete</q-btn>
             </q-card-actions>
             <q-card-section>
-                <i>Nothing to display</i>
+                <q-list bordered class="q-mx-md rounded-borders" v-if="doors.length">
+                    <template v-for="door in doors">
+                        <DoorRow :door="door" @deleted="getRoom" />
+                    </template>
+                </q-list>
+                <i v-else>Nothing to display</i>
             </q-card-section>
         </q-card>
 
         <q-dialog v-model="editing">
             <q-card style="min-width: 350px">
                 <q-card-section>
-                    <div class="text-h6">Edit facility</div>
+                    <div class="text-h6">Edit room</div>
                 </q-card-section>
 
                 <q-card-section class="q-pt-none">
@@ -43,19 +49,25 @@
 
 
 <script lang="ts" setup>
+import type AccessPoint from '@/types/accesspoint';
+import type Door from '@/types/door';
 import type Room from '@/types/room';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import { useQuasar } from 'quasar';
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
+import DoorRow from './DoorRow.vue';
 
 const props = defineProps<{
     room: Room
 }>()
 
-const emit = defineEmits(['deleted', 'changed'])
+const emit = defineEmits(['deleted', 'changed', 'addDoor'])
 
 const $q = useQuasar()
+
+const doors = ref<Door[]>([])
+const aps = ref<AccessPoint[]>([])
 
 const updating = ref(false)
 const editing = ref(false)
@@ -162,4 +174,24 @@ const updateRoom = async () => {
     }
 }
 
+const getRoom = () => {
+    fetch(`${api_hostname}room/${props.room.id_room}?include=doors`)
+        .then(response => response.json())
+        .then(response => {
+            if (response.hasOwnProperty('doors')) {
+                doors.value = response.doors
+            }
+        })
+        .catch(() => {
+            $q.notify({
+                type: 'negative',
+                position: 'bottom-right',
+                message: 'An error occured. Please try again later'
+            })
+        })
+}
+
+onMounted(() => {
+    getRoom()
+})
 </script>

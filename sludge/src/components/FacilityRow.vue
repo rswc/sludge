@@ -14,7 +14,11 @@
             <q-card-section>
                 <q-list bordered class="q-mx-md rounded-borders" v-if="facility.rooms?.length">
                     <template v-for="room in facility.rooms">
-                        <RoomRow :room="room" @changed="roomChanged" @deleted="roomDeleted"/>
+                        <RoomRow
+                            :room="room"
+                            @changed="roomChanged"
+                            @deleted="roomDeleted"
+                            @add-door="addDoorClicked"/>
                     </template>
                 </q-list>
                 <i v-else>No rooms</i>
@@ -65,7 +69,8 @@
                         outlined
                         v-model="newRoom.name"
                         bottom-slots
-                        :rules="[v => !!v || 'Field is required']"
+                        :error-message="v$room.name.$error ? v$room.name.$errors[0].$message.toString() : 'no error'"
+                        :error="v$room.name.$error"
                         label="Name" />
 
                 </q-card-section>
@@ -73,6 +78,37 @@
                 <q-card-actions align="right" class="text-primary">
                     <q-btn flat color="dark" label="Cancel" v-close-popup />
                     <q-btn flat label="Save" @click="addRoom" />
+                </q-card-actions>
+            </q-card>
+        </q-dialog>
+
+        <q-dialog v-model="addingDoor">
+            <q-card style="min-width: 350px">
+                <q-card-section>
+                    <div class="text-h6">Add door</div>
+                </q-card-section>
+
+                <q-card-section class="q-pt-none">
+                    <div class="row">
+                        Facility: {{ facility.name }}
+                    </div>
+
+                    <q-select
+                        outlined
+                        v-model="newDoor.id_room_dst"
+                        label="Destination room"
+                        :options="availableRooms"
+                        option-label="name"
+                        emit-value
+                        bottom-slots
+                        :rules="[v => !!v || 'Field is required']">
+                    </q-select>
+
+                </q-card-section>
+
+                <q-card-actions align="right" class="text-primary">
+                    <q-btn flat color="dark" label="Cancel" v-close-popup />
+                    <q-btn flat label="Save" @click="addDoor" />
                 </q-card-actions>
             </q-card>
         </q-dialog>
@@ -86,8 +122,9 @@ import type Room from '@/types/room';
 import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import { useQuasar } from 'quasar';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 import RoomRow from './RoomRow.vue';
+import type Door from '@/types/door';
 
 const props = defineProps<{
     facility: Facility
@@ -113,6 +150,19 @@ const newRoom = ref(new class implements Room {
     coordinate_x = -1
     coordinate_y = -1
 }())
+
+const addingDoor = ref(false)
+const newDoor = ref(new class implements Door {
+    id_door = -1
+    id_room_src = -1
+    id_room_dst = -1
+}())
+
+// As in, available destination rooms (for doors)
+// assuming door cannot lead back into its source room
+const availableRooms = computed(() => {
+    return props.facility.rooms?.filter(v => v.id_room !== newDoor.value.id_room_src)
+})
 
 const rules = {
     name: { required },
@@ -227,8 +277,14 @@ const updateFacility = async () => {
 }
 
 const addRoom = async () => {
-    const isFormCorrect = await v$room.value.$validate()
-    if (!isFormCorrect) return
+    // Vuelidate just doesn't work here for some reason
+    if (!newRoom.value.name) return
+
+    // const isFormCorrect = await v$room.value.$validate()
+    // if (!isFormCorrect) {
+    //     console.error('Form incorrect', v$room.value.$errors, v$room.value.name.$model)
+    //     return
+    // }
 
     updating.value = true
 
@@ -279,6 +335,60 @@ const addRoom = async () => {
         })
 }
 
+const addDoor = async () => {
+    updating.value = true
+
+    // Quasar select element will not cooperate on correctly displaying
+    // option label and passing option value along otherwise
+    newDoor.value.id_room_dst = (newDoor.value.id_room_dst as any).id_room
+
+    fetch(`${api_hostname}door`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newDoor.value)
+    })
+        .then(response => {
+            updating.value = false
+
+            if (response.ok) {
+                response.json().then(response => {
+                    if (response.hasOwnProperty('id_door')) {
+                        $q.notify({
+                            type: 'positive',
+                            position: 'bottom-right',
+                            message: 'Door added'
+                        })
+
+                        // if (!props.facility.hasOwnProperty('rooms')) {
+                        //     props.facility.rooms = [] 
+                        // }
+
+                        // props.facility.rooms?.push(response)
+
+                        addingDoor.value = false
+                    }
+                })
+            } else {
+                response.json().then(response => {
+                    $q.notify({
+                        type: 'negative',
+                        position: 'bottom-right',
+                        message: (response.hasOwnProperty('error')) ? response.error : 'Could not add door'
+                    })
+                })
+            }
+        })
+        .catch(() => {
+            $q.notify({
+                type: 'negative',
+                position: 'bottom-right',
+                message: 'An error occured. Please try again later'
+            })
+        })
+}
+
 const roomChanged = (newVal: Room) => {
     if (!props.facility.rooms)
         return;
@@ -293,5 +403,14 @@ const roomDeleted = (id: number) => {
     
     const idx = props.facility.rooms.findIndex(v => v.id_room === id)
     props.facility.rooms.splice(idx, 1)
+}
+
+const addDoorClicked = (id: number) => {
+    newDoor.value = new class implements Door {
+        id_door = -1
+        id_room_src = id
+        id_room_dst = undefined as any // yeah, alright
+    }()
+    addingDoor.value = true
 }
 </script>

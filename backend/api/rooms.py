@@ -15,6 +15,17 @@ def api_rooms():
 
         res = cur.fetchall()
 
+        include = request.args.getlist('include')
+
+        if 'doors' in include:
+            for room in res:
+                cur.execute(
+                    '''SELECT * FROM door WHERE id_room_src = ?''', 
+                    (room['id_room'],)
+                )
+
+                room['doors'] = cur.fetchall()
+
         return jsonify(res)
 
 @rooms_api.route('/api/room/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
@@ -29,6 +40,16 @@ def api_room(id):
 
         if res is None:
             return {'error': 'Not found'}, 404
+
+        include = request.args.getlist('include')
+
+        if 'doors' in include:
+            cur.execute(
+                    '''SELECT * FROM door WHERE id_room_src = ?''', 
+                    (res['id_room'],)
+                )
+
+            res['doors'] = cur.fetchall()
 
         return jsonify(res)
     
