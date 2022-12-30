@@ -68,7 +68,7 @@ const v$ = useVuelidate(rules, newFacility)
 const getFacilities = () => {
     fetching.value = true
 
-    fetch(`${api_hostname}facility`)
+    fetch(`${api_hostname}facility?include=rooms`)
         .then(response => response.json())
         .then(response => {
             facilities.value = response

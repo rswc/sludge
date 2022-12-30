@@ -14,6 +14,20 @@ def api_facilitys():
 
         res = cur.fetchall()
 
+        include = request.args.getlist('include')
+
+        if 'rooms' in include:
+            for facility in res:
+                cur.execute(
+                    '''SELECT room.id_room AS id_room, room.name AS name, room.id_facility AS id_facility,
+                    room.coordinate_x AS coordinate_x, room.coordinate_y AS coordinate_y
+                    FROM room JOIN facility USING(id_facility)
+                    WHERE id_facility = ?''', 
+                    (facility['id_facility'],)
+                )
+
+                facility['rooms'] = cur.fetchall()
+
         return jsonify(res)
     
     elif request.method == 'POST':
@@ -54,6 +68,19 @@ def api_facility(id):
         cur.execute('SELECT * FROM `facility` WHERE id_facility = ?', (id,))
 
         res = cur.fetchone()
+
+        include = request.args.getlist('include')
+
+        if 'rooms' in include:
+            cur.execute(
+                    '''SELECT room.id_room AS id_room, room.name AS name, room.id_facility AS id_facility,
+                    room.coordinate_x AS coordinate_x, room.coordinate_y AS coordinate_y
+                    FROM room JOIN facility USING(id_facility)
+                    WHERE id_facility = ?''', 
+                    (res['id_facility'],)
+                )
+
+            res['rooms'] = cur.fetchall()
 
         if res is None:
             return {'error': 'Not found'}, 404
@@ -147,5 +174,12 @@ def api_facility_rooms(id):
         except:
             get_db().rollback()
             raise
-    
-        return {'id_room': cur.lastrowid}, 201
+
+        cur.execute('SELECT * FROM `room` WHERE id_room = ?', (cur.lastrowid,))
+
+        res = cur.fetchone()
+
+        if res is None:
+            return {'error': 'Could not retreive newly created object'}, 500
+
+        return jsonify(res)
