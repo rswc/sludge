@@ -6,6 +6,7 @@ from api.worker import worker_api
 from api.group import group_api
 from api.resource import resource_api
 from api.facility import facility_api
+from api.rooms import rooms_api
 
 app = Flask(__name__)
 CORS(app, resources=[r'/api/*'])
@@ -16,6 +17,7 @@ app.register_blueprint(worker_api)
 app.register_blueprint(group_api)
 app.register_blueprint(resource_api)
 app.register_blueprint(facility_api)
+app.register_blueprint(rooms_api)
 
 
 @app.teardown_appcontext

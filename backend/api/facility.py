@@ -112,3 +112,40 @@ def api_facility(id):
             raise
 
         return {}, 200
+
+@facility_api.route('/api/facility/<int:id>/room', methods=['GET', 'POST'])
+def api_facility_rooms(id):
+    if request.method == 'GET':
+        get_db().row_factory = make_dicts
+
+        cur = get_db().cursor()
+        cur.execute('SELECT * FROM `room` WHERE id_facility = ?', (id,))
+
+        res = cur.fetchall()
+
+        return jsonify(res)
+
+    elif request.method == 'POST':
+        get_db().row_factory = make_dicts
+        req_json = request.get_json()
+        
+        cur = get_db().cursor()
+
+        try:
+            cur.execute('''
+                INSERT INTO `room` 
+                (name, id_facility, coordinate_x, coordinate_y)
+                VALUES (?, ?, 0, 0)
+                ''',
+                (
+                    req_json['name'],
+                    id
+                ))
+            
+            get_db().commit()
+
+        except:
+            get_db().rollback()
+            raise
+    
+        return {'id_room': cur.lastrowid}, 201
