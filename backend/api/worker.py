@@ -96,8 +96,8 @@ def api_worker(id):
         req_roles = []
         if 'roles' in req_json:
             cur.execute(
-                '''SELECT roleOfWorker.id_role AS id_role
-                FROM worker JOIN roleOfWorker USING(id_worker)
+                '''SELECT id_role
+                FROM roleOfWorker 
                 WHERE id_worker = ?''', 
                 (id,)
             )

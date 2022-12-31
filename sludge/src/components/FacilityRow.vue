@@ -18,7 +18,9 @@
                             :room="room"
                             @changed="roomChanged"
                             @deleted="roomDeleted"
-                            @add-door="addDoorClicked"/>
+                            @add-door="addDoorClicked"
+                            @door-deleted="doorDeleted"
+                            ref="roomRows"/>
                     </template>
                 </q-list>
                 <i v-else>No rooms</i>
@@ -133,6 +135,8 @@ const props = defineProps<{
 const emit = defineEmits(['changed'])
 
 const $q = useQuasar()
+
+const roomRows = ref<(typeof RoomRow)[]>()
 
 const updating = ref(false)
 const editing = ref(false)
@@ -342,6 +346,8 @@ const addDoor = async () => {
     // option label and passing option value along otherwise
     newDoor.value.id_room_dst = (newDoor.value.id_room_dst as any).id_room
 
+    if (newDoor.value.id_room_dst < 0) return
+
     fetch(`${api_hostname}door`, {
         method: "POST",
         headers: {
@@ -361,11 +367,9 @@ const addDoor = async () => {
                             message: 'Door added'
                         })
 
-                        // if (!props.facility.hasOwnProperty('rooms')) {
-                        //     props.facility.rooms = [] 
-                        // }
-
-                        // props.facility.rooms?.push(response)
+                        for (const room of roomRows.value!) {
+                            room.getRoom()
+                        }
 
                         addingDoor.value = false
                     }
@@ -412,5 +416,11 @@ const addDoorClicked = (id: number) => {
         id_room_dst = undefined as any // yeah, alright
     }()
     addingDoor.value = true
+}
+
+const doorDeleted = () => {
+    for (const room of roomRows.value!) {
+        room.getRoom()
+    }
 }
 </script>

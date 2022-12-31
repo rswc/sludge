@@ -20,8 +20,11 @@ def api_rooms():
         if 'doors' in include:
             for room in res:
                 cur.execute(
-                    '''SELECT * FROM door WHERE id_room_src = ?''', 
-                    (room['id_room'],)
+                    '''SELECT door.id_door, door.id_room_src, door.id_room_dst,
+                    src.name AS src_name, dst.name AS dst_name
+                    FROM door JOIN room src ON door.id_room_src = src.id_room JOIN room dst ON door.id_room_dst = dst.id_room
+                    WHERE id_room_src = ? OR id_room_dst = ?''', 
+                    (res['id_room'], res['id_room'])
                 )
 
                 room['doors'] = cur.fetchall()
@@ -45,8 +48,11 @@ def api_room(id):
 
         if 'doors' in include:
             cur.execute(
-                    '''SELECT * FROM door WHERE id_room_src = ?''', 
-                    (res['id_room'],)
+                    '''SELECT door.id_door, door.id_room_src, door.id_room_dst,
+                    src.name AS src_name, dst.name AS dst_name
+                    FROM door JOIN room src ON door.id_room_src = src.id_room JOIN room dst ON door.id_room_dst = dst.id_room
+                    WHERE id_room_src = ? OR id_room_dst = ?''', 
+                    (res['id_room'], res['id_room'])
                 )
 
             res['doors'] = cur.fetchall()

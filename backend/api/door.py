@@ -59,6 +59,18 @@ def api_door(id):
         if res is None:
             return {'error': 'Not found'}, 404
 
+        include = request.args.getlist('include')
+
+        if 'groups' in include:
+            cur.execute(
+                    '''SELECT `Group`.name, `Group`.severity
+                    FROM `Group` JOIN doorInGroup USING(id_group)
+                    WHERE id_door = ?''', 
+                    (res['id_door'],)
+                )
+
+            res['groups'] = cur.fetchall()
+
         return jsonify(res)
     
     elif request.method == 'PATCH':
@@ -73,15 +85,37 @@ def api_door(id):
 
         if res is None:
             return {'error': 'Not found'}, 404
+        
+        # If request contains the 'groups' field, fetch those as well
+        groups = []
+        req_groups = []
+        if 'groups' in req_json:
+            cur.execute(
+                '''SELECT id_group
+                FROM doorInGroup
+                WHERE id_door = ?''', 
+                (id,)
+            )
 
-        # Update potential new values, or leave old ones
+            groups = [role['id_group'] for role in cur.fetchall()]
+            req_groups = [role['id_group'] for role in req_json['groups']]
+
         try:
-            cur.execute('UPDATE `door` SET (name, address) = (?, ?) WHERE id_door = ?',
-                (
-                    req_json['name'] if 'name' in req_json else res['name'],
-                    req_json['address'] if 'address' in req_json else res['address'],
-                    id
-                ))
+            # You can't modify a door's source or destination
+            # Just make a new door 4head
+            
+            # Only modify groups if the request mentions them
+            if 'groups' in req_json:
+
+                # If group is assigned to door in the database, but not in the request, remove it 
+                for group in groups:
+                    if group not in req_groups:
+                        cur.execute('DELETE FROM doorInGroup WHERE id_door = ? AND id_group = ?', (id, group))
+                
+                # If group is not assigned to door in the database, but is in the request, add it 
+                for group in req_groups:
+                    if group not in groups:
+                        cur.execute('INSERT INTO doorInGroup (id_door, id_group) VALUES (?, ?)', (id, group))
             
             get_db().commit()
 

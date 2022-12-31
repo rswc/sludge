@@ -15,7 +15,7 @@
             <q-card-section>
                 <q-list bordered class="q-mx-md rounded-borders" v-if="doors.length">
                     <template v-for="door in doors">
-                        <DoorRow :door="door" @deleted="getRoom" />
+                        <DoorRow :door="door" :room-id="room.id_room" @deleted="emit('doorDeleted')" />
                     </template>
                 </q-list>
                 <i v-else>Nothing to display</i>
@@ -62,7 +62,7 @@ const props = defineProps<{
     room: Room
 }>()
 
-const emit = defineEmits(['deleted', 'changed', 'addDoor'])
+const emit = defineEmits(['deleted', 'changed', 'addDoor', 'doorDeleted'])
 
 const $q = useQuasar()
 
@@ -190,6 +190,8 @@ const getRoom = () => {
             })
         })
 }
+
+defineExpose({ getRoom })
 
 onMounted(() => {
     getRoom()
