@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS roleOfWorker (
 );
 
 CREATE TABLE IF NOT EXISTS accesspoint (
-    id_ap   INTEGER NOT NULL,
+    id_ap   INTEGER NOT NULL DEFAULT 0,
     name    VARCHAR2(32) NOT NULL,
     id_room INTEGER NOT NULL,
     icon    INTEGER,

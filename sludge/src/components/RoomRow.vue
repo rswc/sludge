@@ -9,13 +9,20 @@
             <q-card-actions>
                 <q-btn color="primary" flat @click="editClicked">Edit</q-btn>
                 <q-btn color="primary" flat @click="emit('addDoor', room.id_room)">Add door</q-btn>
-                <q-btn color="primary" flat>Add access point</q-btn>
+                <q-btn color="primary" flat @click="emit('addAp', room.id_room)">Add access point</q-btn>
                 <q-btn color="negative" flat @click="deleteRoom">Delete</q-btn>
             </q-card-actions>
             <q-card-section>
-                <q-list bordered class="q-mx-md rounded-borders" v-if="doors.length">
+                <q-list bordered class="q-mx-md rounded-borders" v-if="doors.length || aps.length">
                     <template v-for="door in doors">
-                        <DoorRow :door="door" :room-id="room.id_room" @deleted="emit('doorDeleted')" />
+                        <DoorRow :door="door" :room-id="room.id_room" @deleted="emit('internalChanged')" />
+                    </template>
+                    <template v-for="ap in aps">
+                        <AccessPointRow
+                            :ap="ap"
+                            :room-id="room.id_room"
+                            @deleted="emit('internalChanged')"
+                            @changed="emit('internalChanged')" />
                     </template>
                 </q-list>
                 <i v-else>Nothing to display</i>
@@ -57,12 +64,13 @@ import { required } from '@vuelidate/validators';
 import { useQuasar } from 'quasar';
 import { onMounted, ref } from 'vue';
 import DoorRow from './DoorRow.vue';
+import AccessPointRow from './AccessPointRow.vue';
 
 const props = defineProps<{
     room: Room
 }>()
 
-const emit = defineEmits(['deleted', 'changed', 'addDoor', 'doorDeleted'])
+const emit = defineEmits(['deleted', 'changed', 'addDoor', 'addAp', 'internalChanged'])
 
 const $q = useQuasar()
 
@@ -175,11 +183,14 @@ const updateRoom = async () => {
 }
 
 const getRoom = () => {
-    fetch(`${api_hostname}room/${props.room.id_room}?include=doors`)
+    fetch(`${api_hostname}room/${props.room.id_room}?include=doors&include=accesspoints`)
         .then(response => response.json())
         .then(response => {
             if (response.hasOwnProperty('doors')) {
                 doors.value = response.doors
+            }
+            if (response.hasOwnProperty('accesspoints')) {
+                aps.value = response.accesspoints
             }
         })
         .catch(() => {

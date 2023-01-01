@@ -2,30 +2,30 @@ from flask import Blueprint, request, jsonify
 import sqlite3 as sql
 from .util import get_db, make_dicts
 
-door_api = Blueprint('door_api', __name__)
+accesspoint_api = Blueprint('accesspoint_api', __name__)
 
-@door_api.route('/api/door', methods=['GET', 'POST'])
-def api_doors():
+@accesspoint_api.route('/api/accesspoint', methods=['GET', 'POST'])
+def api_accesspoints():
     if request.method == 'GET':
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `door`')
+        cur.execute('SELECT * FROM `accesspoint`')
 
         res = cur.fetchall()
 
         include = request.args.getlist('include')
 
         if 'groups' in include:
-            for door in res:
+            for ap in res:
                 cur.execute(
-                        '''SELECT `Group`.name, `Group`.severity
-                        FROM `Group` JOIN doorInGroup USING(id_group)
-                        WHERE id_door = ?''', 
-                        (res['id_door'],)
+                        '''SELECT `Group`.*
+                        FROM `Group` JOIN accesspointInGroup USING(id_group)
+                        WHERE id_ap = ?''', 
+                        (res['id_ap'],)
                     )
 
-                door['groups'] = cur.fetchall()
+                ap['groups'] = cur.fetchall()
 
         return jsonify(res)
     
@@ -35,20 +35,19 @@ def api_doors():
         
         cur = get_db().cursor()
 
-        if 'id_room_src' not in req_json:
-            return {'error': 'Missing parameter: source room'}, 400
-        if 'id_room_dst' not in req_json:
-            return {'error': 'Missing parameter: destination room'}, 400
+        if 'id_room' not in req_json:
+            return {'error': 'Missing parameter: Room'}, 400
 
         try:
             cur.execute('''
-                INSERT INTO `door` 
-                (id_room_src, id_room_dst)
-                VALUES (?, ?)
+                INSERT INTO `accesspoint` 
+                (id_room, name, icon)
+                VALUES (?, ?, ?)
                 ''',
                 (
-                    req_json['id_room_src'],
-                    req_json['id_room_dst']
+                    req_json['id_room'],
+                    req_json['name'],
+                    req_json['icon']
                 ))
             
             get_db().commit()
@@ -57,15 +56,15 @@ def api_doors():
             get_db().rollback()
             raise
     
-        return {'id_door': cur.lastrowid}, 201
+        return {'id_ap': cur.lastrowid}, 201
 
-@door_api.route('/api/door/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
-def api_door(id):
+@accesspoint_api.route('/api/accesspoint/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
+def api_accesspoint(id):
     if request.method == 'GET':
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `door` WHERE id_door = ?', (id,))
+        cur.execute('SELECT * FROM `accesspoint` WHERE id_ap = ?', (id,))
 
         res = cur.fetchone()
 
@@ -76,10 +75,10 @@ def api_door(id):
 
         if 'groups' in include:
             cur.execute(
-                    '''SELECT `Group`.name, `Group`.severity
-                    FROM `Group` JOIN doorInGroup USING(id_group)
-                    WHERE id_door = ?''', 
-                    (res['id_door'],)
+                    '''SELECT `Group`.*
+                    FROM `Group` JOIN accesspointInGroup USING(id_group)
+                    WHERE id_ap = ?''', 
+                    (res['id_ap'],)
                 )
 
             res['groups'] = cur.fetchall()
@@ -93,7 +92,7 @@ def api_door(id):
         cur = get_db().cursor()
 
         # Fetch current values
-        cur.execute('SELECT * FROM `door` WHERE id_door = ?', (id,))
+        cur.execute('SELECT * FROM `accesspoint` WHERE id_ap = ?', (id,))
         res = cur.fetchone()
 
         if res is None:
@@ -105,8 +104,8 @@ def api_door(id):
         if 'groups' in req_json:
             cur.execute(
                 '''SELECT id_group
-                FROM doorInGroup
-                WHERE id_door = ?''', 
+                FROM accesspointInGroup
+                WHERE id_ap = ?''', 
                 (id,)
             )
 
@@ -114,21 +113,25 @@ def api_door(id):
             req_groups = [role['id_group'] for role in req_json['groups']]
 
         try:
-            # You can't modify a door's source or destination
-            # Just make a new door 4head
+            cur.execute('UPDATE `accesspoint` SET (name, icon) = (?, ?) WHERE id_ap = ?',
+                (
+                    req_json['name'] if 'name' in req_json else res['name'],
+                    req_json['icon'] if 'icon' in req_json else res['icon'],
+                    id
+                ))
             
             # Only modify groups if the request mentions them
             if 'groups' in req_json:
 
-                # If group is assigned to door in the database, but not in the request, remove it 
+                # If group is assigned to accesspoint in the database, but not in the request, remove it 
                 for group in groups:
                     if group not in req_groups:
-                        cur.execute('DELETE FROM doorInGroup WHERE id_door = ? AND id_group = ?', (id, group))
+                        cur.execute('DELETE FROM accesspointInGroup WHERE id_ap = ? AND id_group = ?', (id, group))
                 
-                # If group is not assigned to door in the database, but is in the request, add it 
+                # If group is not assigned to accesspoint in the database, but is in the request, add it 
                 for group in req_groups:
                     if group not in groups:
-                        cur.execute('INSERT INTO doorInGroup (id_door, id_group) VALUES (?, ?)', (id, group))
+                        cur.execute('INSERT INTO accesspointInGroup (id_ap, id_group) VALUES (?, ?)', (id, group))
             
             get_db().commit()
 
@@ -137,21 +140,21 @@ def api_door(id):
             raise
         
         # Fetch updated values
-        cur.execute('SELECT * FROM `door` WHERE id_door = ?', (id,))
+        cur.execute('SELECT * FROM `accesspoint` WHERE id_ap = ?', (id,))
 
         return jsonify(cur.fetchone())
     
     elif request.method == 'DELETE':
         cur = get_db().cursor()
 
-        cur.execute('SELECT * FROM `door` WHERE id_door = ?', (id,))
+        cur.execute('SELECT * FROM `accesspoint` WHERE id_ap = ?', (id,))
         res = cur.fetchone()
 
         if res is None:
             return {'error': 'Not found'}, 404
         
         try:
-            cur.execute('DELETE FROM `door` WHERE id_door = ?', (id,))
+            cur.execute('DELETE FROM `accesspoint` WHERE id_ap = ?', (id,))
             
             get_db().commit()
 

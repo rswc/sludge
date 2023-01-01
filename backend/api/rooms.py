@@ -29,6 +29,17 @@ def api_rooms():
 
                 room['doors'] = cur.fetchall()
 
+        if 'accesspoints' in include:
+            for room in res:
+                cur.execute(
+                    '''SELECT *
+                    FROM accesspoint
+                    WHERE id_room = ?''', 
+                    (res['id_room'],)
+                )
+
+                room['accesspoints'] = cur.fetchall()
+
         return jsonify(res)
 
 @rooms_api.route('/api/room/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
@@ -56,6 +67,16 @@ def api_room(id):
                 )
 
             res['doors'] = cur.fetchall()
+        
+        if 'accesspoints' in include:
+            cur.execute(
+                    '''SELECT *
+                    FROM accesspoint
+                    WHERE id_room = ?''', 
+                    (res['id_room'],)
+                )
+
+            res['accesspoints'] = cur.fetchall()
 
         return jsonify(res)
     

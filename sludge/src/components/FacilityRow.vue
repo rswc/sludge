@@ -19,7 +19,8 @@
                             @changed="roomChanged"
                             @deleted="roomDeleted"
                             @add-door="addDoorClicked"
-                            @door-deleted="doorDeleted"
+                            @add-ap="addAPClicked"
+                            @internal-changed="internalChanged"
                             ref="roomRows"/>
                     </template>
                 </q-list>
@@ -114,6 +115,46 @@
                 </q-card-actions>
             </q-card>
         </q-dialog>
+
+        <q-dialog v-model="addingAP">
+            <q-card style="min-width: 350px">
+                <q-card-section>
+                    <div class="text-h6">Add access point</div>
+                </q-card-section>
+
+                <q-card-section class="q-pt-none">
+                    <div class="row">
+                        Facility: {{ facility.name }}
+                    </div>
+
+                    <q-input
+                        outlined
+                        v-model="newAP.name"
+                        bottom-slots
+                        :rules="[v => !!v || 'Field is required']"
+                        label="Name" />
+
+                    <q-select
+                        outlined
+                        v-model="newAP.icon"
+                        label="Icon"
+                        :options="Icons"
+                        emit-value
+                        bottom-slots
+                        :rules="[v => (v >= 0 && v != null) || 'Field is required']">
+                        <template v-slot:selected-item="scope">
+                            <q-icon :name="Icons[scope.opt].icon"></q-icon>
+                        </template>
+                    </q-select>
+
+                </q-card-section>
+
+                <q-card-actions align="right" class="text-primary">
+                    <q-btn flat color="dark" label="Cancel" v-close-popup />
+                    <q-btn flat label="Save" @click="addAP" />
+                </q-card-actions>
+            </q-card>
+        </q-dialog>
     </q-expansion-item>
 </template>
 
@@ -127,6 +168,8 @@ import { useQuasar } from 'quasar';
 import { computed, ref } from 'vue';
 import RoomRow from './RoomRow.vue';
 import type Door from '@/types/door';
+import type AccessPoint from '@/types/accesspoint';
+import Icons from '@/components/apicons'
 
 const props = defineProps<{
     facility: Facility
@@ -160,6 +203,14 @@ const newDoor = ref(new class implements Door {
     id_door = -1
     id_room_src = -1
     id_room_dst = -1
+}())
+
+const addingAP = ref(false)
+const newAP = ref(new class implements AccessPoint {
+    id_ap = -1
+    name = ''
+    id_room = -1
+    icon = -1
 }())
 
 // As in, available destination rooms (for doors)
@@ -393,6 +444,56 @@ const addDoor = async () => {
         })
 }
 
+const addAP = async () => {
+    updating.value = true
+
+    if (newAP.value.name.length < 1) return
+
+    fetch(`${api_hostname}accesspoint`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newAP.value)
+    })
+        .then(response => {
+            updating.value = false
+
+            if (response.ok) {
+                response.json().then(response => {
+                    if (response.hasOwnProperty('id_ap')) {
+                        $q.notify({
+                            type: 'positive',
+                            position: 'bottom-right',
+                            message: 'Access Point added'
+                        })
+
+                        for (const room of roomRows.value!) {
+                            room.getRoom()
+                        }
+
+                        addingAP.value = false
+                    }
+                })
+            } else {
+                response.json().then(response => {
+                    $q.notify({
+                        type: 'negative',
+                        position: 'bottom-right',
+                        message: (response.hasOwnProperty('error')) ? response.error : 'Could not add Access Point'
+                    })
+                })
+            }
+        })
+        .catch(() => {
+            $q.notify({
+                type: 'negative',
+                position: 'bottom-right',
+                message: 'An error occured. Please try again later'
+            })
+        })
+}
+
 const roomChanged = (newVal: Room) => {
     if (!props.facility.rooms)
         return;
@@ -418,7 +519,17 @@ const addDoorClicked = (id: number) => {
     addingDoor.value = true
 }
 
-const doorDeleted = () => {
+const addAPClicked = (id: number) => {
+    newAP.value = new class implements AccessPoint {
+        id_ap = -1
+        name = ''
+        id_room = id
+        icon = 0
+    }()
+    addingAP.value = true
+}
+
+const internalChanged = () => {
     for (const room of roomRows.value!) {
         room.getRoom()
     }
