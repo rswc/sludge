@@ -123,7 +123,7 @@ CREATE TABLE IF NOT EXISTS room (
 
 CREATE TABLE IF NOT EXISTS transfer (
     id_transfer     INTEGER NOT NULL,
-    timestamp       DATE NOT NULL,
+    timestamp       DATETIME NOT NULL,
     id_resource     INTEGER NOT NULL,
     id_worker       INTEGER NOT NULL,
     amount          REAL NOT NULL,
