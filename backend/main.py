@@ -10,6 +10,7 @@ from api.rooms import rooms_api
 from api.door import door_api
 from api.accesspoint import accesspoint_api
 from api.transfer import transfer_api
+from api.event import event_api
 
 app = Flask(__name__)
 CORS(app, resources=[r'/api/*'])
@@ -24,6 +25,7 @@ app.register_blueprint(rooms_api)
 app.register_blueprint(door_api)
 app.register_blueprint(accesspoint_api)
 app.register_blueprint(transfer_api)
+app.register_blueprint(event_api)
 
 
 @app.teardown_appcontext
