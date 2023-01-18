@@ -72,11 +72,24 @@ def api_workers():
             
             get_db().commit()
 
+            worker_id = cur.lastrowid
+
         except:
             get_db().rollback()
             raise
+
+        if 'roles' in req_json:
+            try:
+                for role in req_json['roles']:
+                    cur.execute('INSERT INTO roleOfWorker (id_worker, id_role) VALUES (?, ?)', (worker_id, role['id_role']))
+                
+                get_db().commit()
+
+            except:
+                get_db().rollback()
+                raise
     
-        return {'id_worker': cur.lastrowid}, 201
+        return {'id_worker': worker_id}, 201
 
 
 @worker_api.route('/api/worker/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
