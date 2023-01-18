@@ -1,10 +1,38 @@
 <template>
     <h1>Events</h1>
 
+    <q-card flat bordered class="q-ma-md q-gutter-md">
+        <h2>Filter</h2>
+        <div class="row q-pa-md">
+            <div class="col q-gutter-md">
+                <q-input
+                    outlined
+                    clearable
+                    v-model.number="filterData.employee"
+                    label="Employee" />
+                
+                <q-select
+                    outlined
+                    v-model="filterData.type"
+                    clearable
+                    :options="[0, 1, 2]"
+                    :option-label="eventLabel"
+                    label="Type">
+                </q-select>
+
+                <q-btn color="primary" @click="getEvents" label="Filter" :loading="fetching" :disable="fetching">
+                    <template v-slot:loading>
+                        <q-spinner />
+                    </template>
+                </q-btn>
+            </div>
+        </div>
+    </q-card>
+
     <q-timeline>
         <template v-for="event in events">
             <q-timeline-entry
-                :title="eventTypeName[event.type]"
+                :title="eventLabel(event.type)"
                 :subtitle="event.timestamp">
                 
                 <q-chip
@@ -31,19 +59,43 @@ const eventTypeName = [
     'Error',
 ]
 
+const eventLabel = (type: number) => {
+    return eventTypeName[type]
+}
+
 
 const fetching = ref(true)
 const events = ref<Event[]>([])
+const filterData = ref({
+    employee: '',
+    type: null
+})
 
 const $q = useQuasar()
 
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
 
+const filterParams = () => {
+    let params = []
+
+    if (filterData.value.employee) {
+        params.push(`employee=${filterData.value.employee}`)
+    }
+    if (filterData.value.type !== null) {
+        params.push(`type=${filterData.value.type}`)
+    }
+    
+    if (params.length > 0) {
+        return '?' + params.join('&')
+    }
+
+    return ''
+}
 
 const getEvents = () => {
     fetching.value = true
 
-    fetch(`${api_hostname}event`)
+    fetch(`${api_hostname}event${filterParams()}`)
         .then(response => response.json())
         .then((response: any[]) => {
             events.value = response.reverse()

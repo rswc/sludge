@@ -10,7 +10,15 @@ def api_events():
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `event`')
+        cur.execute('''
+            SELECT `event`.* FROM `event` JOIN worker USING(id_worker)
+            WHERE (worker.name LIKE ? OR worker.surname LIKE ?) AND (event.type = ? OR ? IS NULL)
+        ''', (
+            f"%{request.args.get('employee', '')}%",
+            f"%{request.args.get('employee', '')}%",
+            request.args.get('type', None),
+            request.args.get('type', None),
+        ))
 
         res = cur.fetchall()
 
