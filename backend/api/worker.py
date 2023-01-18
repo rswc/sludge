@@ -198,3 +198,23 @@ def api_worker(id):
             raise
 
         return {}, 200
+
+@worker_api.route('/api/worker/<int:id>/stats', methods=['GET', 'PATCH', 'DELETE'])
+def api_worker_stats(id):
+    if request.method == 'GET':
+        get_db().row_factory = make_dicts
+
+        res = {'id_worker': id}
+
+        cur = get_db().cursor()        
+
+        cur.execute('SELECT COUNT(*) AS num_events FROM event WHERE id_worker = ?', (id,))
+        res['num_events'] = cur.fetchone()['num_events']
+
+        cur.execute('SELECT COUNT(*) AS num_transfers FROM transfer WHERE id_worker = ?', (id,))
+        res['num_transfers'] = cur.fetchone()['num_transfers']
+
+        if res is None:
+            return {'error': 'Not found'}, 404
+
+        return jsonify(res)

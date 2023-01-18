@@ -9,3 +9,9 @@ export default interface Employee {
     job_title: string,
     roles?: Role[] 
 }
+
+export interface EmployeeStats {
+    id_worker: number,
+    num_events: number,
+    num_transfers: number
+}

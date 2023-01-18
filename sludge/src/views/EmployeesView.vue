@@ -80,14 +80,42 @@
     <Spinner v-if="fetching" />
 
     <div class="row" v-for="emp in employees">
-        <EmployeeRow :employee="emp" :role-options="allRoles" @deleted="getEmployees" />
+        <EmployeeRow :employee="emp" :role-options="allRoles" @delete="deleteClicked" />
     </div>
+
+    <q-dialog v-model="showDelete">
+        <q-card style="min-width: 350px">
+            <q-card-section>
+                <div class="text-h6">Delete employee?</div>
+            </q-card-section>
+
+            <q-card-section class="q-pt-none">
+                <Spinner v-if="fetchingStats" />
+
+                {{ deletingStats.num_events }} {{ (deletingStats.num_events != 1) ? 'events' : 'event' }} 
+                and {{ deletingStats.num_transfers }} {{ (deletingStats.num_transfers != 1) ? 'transfers' : 'transfer' }}
+                related to this employee will also be deleted.<br>This action cannot be undone.
+            </q-card-section>
+
+            <q-card-actions align="right" class="text-primary">
+                <q-btn flat color="dark" label="Cancel" v-close-popup />
+                <q-btn
+                    flat
+                    color="negative"
+                    label="Delete"
+                    :disable="fetchingStats"
+                    @click="deleteEmployee(deletingStats.id_worker)" 
+                    v-close-popup />
+            </q-card-actions>
+        </q-card>
+    </q-dialog>
 </template>
 
 <script lang="ts" setup>
 import EmployeeRow from '@/components/EmployeeRow.vue';
 import Spinner from '@/components/Spinner.vue';
 import type Employee from '@/types/employee';
+import type { EmployeeStats } from '@/types/employee';
 import type Role from '@/types/role';
 import { useQuasar, colors } from 'quasar';
 import { onMounted, ref } from 'vue';
@@ -107,6 +135,13 @@ const filterDummy = ref(new class implements Employee {
     date_of_expiration = ''
     job_title = ''
     roles: Role[] = []
+}())
+const showDelete = ref(false)
+const fetchingStats = ref(false)
+const deletingStats = ref(new class implements EmployeeStats {
+    id_worker = -1
+    num_events = 0
+    num_transfers = 0
 }())
 
 const chipStyle = (color: string) => {
@@ -160,12 +195,73 @@ const getEmployees = () => {
         })
 }
 
+const getEmployeeStats = () => {
+    fetchingStats.value = true
+    
+    deletingStats.value.num_events = 0
+    deletingStats.value.num_transfers = 0
+
+    fetch(`${api_hostname}worker/${deletingStats.value.id_worker}/stats`)
+        .then(response => response.json())
+        .then(response => {
+            deletingStats.value = response
+            fetchingStats.value = false
+        })
+        .catch(() => {
+            fetchingStats.value = false
+        })
+}
+
 const getRoles = () => {
     fetch(api_hostname + 'role')
         .then(response => response.json())
         .then(response => {
             allRoles.value = response
         })
+}
+
+const deleteEmployee = async (id: number) => {
+    deletingStats.value = new class implements EmployeeStats {
+        id_worker = -1
+        num_events = 0
+        num_transfers = 0
+    }()
+
+    fetch(`${api_hostname}worker/${id}`, {
+            method: "DELETE"
+        })
+            .then(response => {
+                if (response.ok) {
+                    $q.notify({
+                        type: 'positive',
+                        position: 'bottom-right',
+                        message: 'Employee deleted'
+                    })
+
+                    getEmployees()
+
+                } else
+                    $q.notify({
+                        type: 'negative',
+                        position: 'bottom-right',
+                        message: 'Could not delete employee'
+                    })
+            })
+            .catch(() => {
+                $q.notify({
+                    type: 'negative',
+                    position: 'bottom-right',
+                    message: 'An error occured. Please try again later'
+                })
+            })
+}
+
+const deleteClicked = (emp: Employee) => {
+    deletingStats.value.id_worker = emp.id_worker
+
+    getEmployeeStats()
+
+    showDelete.value = true
 }
 
 onMounted(() => {

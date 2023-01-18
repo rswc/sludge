@@ -36,7 +36,7 @@
         <RouterLink :to="editPath" custom v-slot="{ navigate }">
             <q-btn outline color="primary" @click="(navigate as any)" :disable="updating">Edit</q-btn>
         </RouterLink>
-        <q-btn outline color="negative" @click="deleteEmployee" :disable="updating">Delete</q-btn>
+        <q-btn outline color="negative" @click="$emit('delete', employee)" :disable="updating">Delete</q-btn>
     </div>
 </template>
 
@@ -55,7 +55,7 @@ const props = defineProps<{
     roleOptions: Role[]
 }>()
 
-const emit = defineEmits(['deleted'])
+const emit = defineEmits(['delete'])
 
 const editPath = computed(() => {
     return '/employees/' + props.employee.id_worker
@@ -69,43 +69,6 @@ const chipStyle = (color: string) => {
 }
 
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
-
-const deleteEmployee = async () => { 
-    if (props.employee)
-    {
-        updating.value = true
-
-        fetch(`${api_hostname}worker/${props.employee.id_worker}`, {
-            method: "DELETE"
-        })
-            .then(response => {
-                updating.value = false
-
-                if (response.ok) {
-                    $q.notify({
-                        type: 'positive',
-                        position: 'bottom-right',
-                        message: 'Employee deleted'
-                    })
-                    
-                    emit('deleted')
-
-                } else
-                    $q.notify({
-                        type: 'negative',
-                        position: 'bottom-right',
-                        message: 'Could not delete employee'
-                    })
-            })
-            .catch(() => {
-                $q.notify({
-                    type: 'negative',
-                    position: 'bottom-right',
-                    message: 'An error occured. Please try again later'
-                })
-            })
-    }
-}
 
 const updateRoles = async () => {
     fetch(`${api_hostname}worker/${props.employee.id_worker}`, {
