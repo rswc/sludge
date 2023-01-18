@@ -31,8 +31,30 @@
     <Spinner v-if="fetching" />
 
     <div class="row" v-for="resource in resources">
-        <ResourceRow :resource="resource" @deleted="getResources" />
+        <ResourceRow :resource="resource" @delete="deleteClicked" />
     </div>
+
+    <q-dialog v-model="showDelete">
+        <q-card style="min-width: 350px">
+            <q-card-section>
+                <div class="text-h6">Delete resource?</div>
+            </q-card-section>
+
+            <q-card-section class="q-pt-none">
+                All logged transfers of this resource will also be deleted.<br>This action cannot be undone.
+            </q-card-section>
+
+            <q-card-actions align="right" class="text-primary">
+                <q-btn flat color="dark" label="Cancel" v-close-popup />
+                <q-btn
+                    flat
+                    color="negative"
+                    label="Delete"
+                    @click="deleteResource(deletingResource!.id_resource)" 
+                    v-close-popup />
+            </q-card-actions>
+        </q-card>
+    </q-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -55,6 +77,9 @@ const newResource = ref(new class implements Resource {
 const resources = ref<Resource[]>([])
 const fetching = ref(true)
 const updating = ref(false)
+
+const showDelete = ref(false)
+const deletingResource = ref<Resource|null>(null)
 
 const rules = {
     name: { required }
@@ -125,6 +150,43 @@ const addResource = async () => {
                 message: 'An error occured. Please try again later'
             })
         })
+}
+
+const deleteResource = async (id: number) => { 
+    fetch(`${api_hostname}resource/${id}`, {
+            method: "DELETE"
+        })
+            .then(response => {
+                updating.value = false
+
+                if (response.ok) {
+                    $q.notify({
+                        type: 'positive',
+                        position: 'bottom-right',
+                        message: 'Resource deleted'
+                    })
+                    
+                    getResources()
+
+                } else
+                    $q.notify({
+                        type: 'negative',
+                        position: 'bottom-right',
+                        message: 'Could not delete resource'
+                    })
+            })
+            .catch(() => {
+                $q.notify({
+                    type: 'negative',
+                    position: 'bottom-right',
+                    message: 'An error occured. Please try again later'
+                })
+            })
+}
+
+const deleteClicked = (res: Resource) => {
+    deletingResource.value = res
+    showDelete.value = true
 }
 
 onMounted(() => {

@@ -25,7 +25,7 @@
         </div>
         <div class="col actions">
             <q-btn outline color="primary" @click="editing = true">Edit</q-btn>
-            <q-btn outline color="negative" @click="deleteResource" :disable="updating">Delete</q-btn>
+            <q-btn outline color="negative" @click="$emit('delete', resource)" :disable="updating">Delete</q-btn>
         </div>
      </template>
  </template>
@@ -47,7 +47,7 @@ const props = defineProps<{
     resource: Resource
 }>()
 
-const emit = defineEmits(['deleted'])
+const emit = defineEmits(['delete'])
 
 const rules = {
     name: { required }
@@ -56,43 +56,6 @@ const rules = {
 const v$ = useVuelidate(rules, props.resource)
 
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
-
-const deleteResource = async () => { 
-    if (props.resource)
-    {
-        updating.value = true
-
-        fetch(`${api_hostname}resource/${props.resource.id_resource}`, {
-            method: "DELETE"
-        })
-            .then(response => {
-                updating.value = false
-
-                if (response.ok) {
-                    $q.notify({
-                        type: 'positive',
-                        position: 'bottom-right',
-                        message: 'Resource deleted'
-                    })
-                    
-                    emit('deleted')
-
-                } else
-                    $q.notify({
-                        type: 'negative',
-                        position: 'bottom-right',
-                        message: 'Could not delete resource'
-                    })
-            })
-            .catch(() => {
-                $q.notify({
-                    type: 'negative',
-                    position: 'bottom-right',
-                    message: 'An error occured. Please try again later'
-                })
-            })
-    }
-}
 
 const updateResource = async () => {
     if (props.resource)
