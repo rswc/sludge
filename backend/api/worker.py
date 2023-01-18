@@ -8,8 +8,33 @@ def api_workers():
     if request.method == 'GET':
         get_db().row_factory = make_dicts
 
+        roles_filter = request.args.getlist('role')
+
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM worker')
+
+        if roles_filter:
+            cur.execute(
+                f'''SELECT DISTINCT worker.* FROM worker JOIN roleOfWorker USING(id_worker) 
+                WHERE id_role IN ({','.join(['?'] * len(roles_filter))}) AND LOWER(name) LIKE ? 
+                AND LOWER(surname) LIKE ? AND LOWER(job_title) LIKE ?''',
+                (
+                    *roles_filter,
+                    f"%{request.args.get('name', '')}%",
+                    f"%{request.args.get('surname', '')}%",
+                    f"%{request.args.get('job_title', '')}%",
+                )
+            )
+
+        else:
+            cur.execute(
+                '''SELECT * FROM worker WHERE LOWER(name) LIKE ? AND LOWER(surname) LIKE ?
+                AND LOWER(job_title) LIKE ?''',
+                (
+                    f"%{request.args.get('name', '')}%",
+                    f"%{request.args.get('surname', '')}%",
+                    f"%{request.args.get('job_title', '')}%",
+                )
+            )
 
         res = cur.fetchall()
 

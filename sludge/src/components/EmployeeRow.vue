@@ -6,7 +6,7 @@
         {{ employee.surname }}
     </div>
     <div class="col">
-        {{ employee.date_of_birth }}
+        {{ employee.job_title }}
     </div>
     <div class="col-4">
         <q-select
