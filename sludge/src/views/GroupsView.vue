@@ -49,8 +49,32 @@
     <Spinner v-if="fetching" />
 
     <div class="row" v-for="group in groups">
-        <GroupRow :group="group" @deleted="getGroups" />
+        <GroupRow :group="group" @delete="deleteClicked" />
     </div>
+
+    <q-dialog v-model="showDelete">
+        <q-card style="min-width: 350px">
+            <q-card-section>
+                <div class="text-h6">Delete group?</div>
+            </q-card-section>
+
+            <q-card-section class="q-pt-none">
+                {{ deletingGroup?.num_doors }} {{ (deletingGroup?.num_doors != 1) ? 'doors' : 'door' }}
+                and {{ deletingGroup?.num_aps }} {{ (deletingGroup?.num_aps != 1) ? 'access points' : 'access point' }}
+                will have this role removed.<br>This action cannot be undone.
+            </q-card-section>
+
+            <q-card-actions align="right" class="text-primary">
+                <q-btn flat color="dark" label="Cancel" v-close-popup />
+                <q-btn
+                    flat
+                    color="negative"
+                    label="Delete"
+                    @click="deleteGroup(deletingGroup!.id_group)" 
+                    v-close-popup />
+            </q-card-actions>
+        </q-card>
+    </q-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -74,6 +98,9 @@ const newGroup = ref(new class implements Group {
 const groups = ref<Group[]>([])
 const fetching = ref(true)
 const updating = ref(false)
+
+const showDelete = ref(false)
+const deletingGroup = ref<Group|null>(null)
 
 const rules = {
     name: { required },
@@ -145,6 +172,43 @@ const addGroup = async () => {
                 message: 'An error occured. Please try again later'
             })
         })
+}
+
+const deleteGroup = async (id: number) => { 
+    fetch(`${api_hostname}group/${id}`, {
+            method: "DELETE"
+        })
+            .then(response => {
+                updating.value = false
+
+                if (response.ok) {
+                    $q.notify({
+                        type: 'positive',
+                        position: 'bottom-right',
+                        message: 'Group deleted'
+                    })
+                    
+                    getGroups()
+
+                } else
+                    $q.notify({
+                        type: 'negative',
+                        position: 'bottom-right',
+                        message: 'Could not delete group'
+                    })
+            })
+            .catch(() => {
+                $q.notify({
+                    type: 'negative',
+                    position: 'bottom-right',
+                    message: 'An error occured. Please try again later'
+                })
+            })
+}
+
+const deleteClicked = (group: Group) => {
+    deletingGroup.value = group
+    showDelete.value = true
 }
 
 onMounted(() => {

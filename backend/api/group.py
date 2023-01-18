@@ -13,9 +13,9 @@ def api_roles():
         cur.execute('''
             SELECT id_group, name, severity, COUNT(id_door) AS num_doors, COUNT(id_ap) AS num_aps FROM (
             SELECT `group`.*, NULL AS id_door, id_ap
-            FROM `Group` JOIN accesspointingroup USING(id_group)
+            FROM `Group` LEFT JOIN accesspointingroup USING(id_group)
             UNION ALL 
-            SELECT `group`.*, id_door, NULL AS id_ap FROM `Group` JOIN dooringroup USING(id_group))
+            SELECT `group`.*, id_door, NULL AS id_ap FROM `Group` LEFT JOIN dooringroup USING(id_group))
             GROUP BY id_group
         ''')
 
