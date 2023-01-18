@@ -39,9 +39,12 @@
                 {{ role.name }}
             </q-chip>
         </div>
+        <div class="col">
+            {{ role.num_workers }}
+        </div>
         <div class="col actions">
             <q-btn outline color="primary" @click="editing = true">Edit</q-btn>
-            <q-btn outline color="negative" @click="deleteRole" :disable="updating">Delete</q-btn>
+            <q-btn outline color="negative" @click="$emit('delete', role)" :disable="updating">Delete</q-btn>
         </div>
     </template>
 </template>
@@ -62,7 +65,7 @@ const props = defineProps<{
     role: Role
 }>()
 
-const emit = defineEmits(['deleted'])
+const emit = defineEmits(['delete'])
 
 const chipStyle = computed(() => {
     return {
@@ -79,43 +82,6 @@ const rules = {
 const v$ = useVuelidate(rules, props.role)
 
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
-
-const deleteRole = async () => { 
-    if (props.role)
-    {
-        updating.value = true
-
-        fetch(`${api_hostname}role/${props.role.id_role}`, {
-            method: "DELETE"
-        })
-            .then(response => {
-                updating.value = false
-
-                if (response.ok) {
-                    $q.notify({
-                        type: 'positive',
-                        position: 'bottom-right',
-                        message: 'Role deleted'
-                    })
-                    
-                    emit('deleted')
-
-                } else
-                    $q.notify({
-                        type: 'negative',
-                        position: 'bottom-right',
-                        message: 'Could not delete role'
-                    })
-            })
-            .catch(() => {
-                $q.notify({
-                    type: 'negative',
-                    position: 'bottom-right',
-                    message: 'An error occured. Please try again later'
-                })
-            })
-    }
-}
 
 const updateRole = async () => {
     if (props.role)

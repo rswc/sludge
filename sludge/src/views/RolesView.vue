@@ -39,6 +39,9 @@
             Role
         </div>
         <div class="col fw-bold">
+            Employees
+        </div>
+        <div class="col fw-bold">
             Actions
         </div>
     </div>
@@ -46,8 +49,31 @@
     <Spinner v-if="fetching" />
 
     <div class="row" v-for="role in roles">
-        <RoleRow :role="role" @deleted="getRoles" />
+        <RoleRow :role="role" @delete="deleteClicked" />
     </div>
+
+    <q-dialog v-model="showDelete">
+        <q-card style="min-width: 350px">
+            <q-card-section>
+                <div class="text-h6">Delete employee?</div>
+            </q-card-section>
+
+            <q-card-section class="q-pt-none">
+                {{ deletingRole?.num_workers }} {{ (deletingRole?.num_workers != 1) ? 'employees' : 'employee' }}
+                will have this role removed.<br>This action cannot be undone.
+            </q-card-section>
+
+            <q-card-actions align="right" class="text-primary">
+                <q-btn flat color="dark" label="Cancel" v-close-popup />
+                <q-btn
+                    flat
+                    color="negative"
+                    label="Delete"
+                    @click="deleteRole(deletingRole!.id_role)" 
+                    v-close-popup />
+            </q-card-actions>
+        </q-card>
+    </q-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -67,10 +93,14 @@ const newRole = ref(new class implements Role {
     id_role = -1
     name = ''
     color = '#bffbff'
+    num_workers = 0
 }())
 const roles = ref<Role[]>([])
 const fetching = ref(true)
 const updating = ref(false)
+
+const showDelete = ref(false)
+const deletingRole = ref<Role|null>(null)
 
 const rules = {
     name: { required },
@@ -142,6 +172,43 @@ const addRole = async () => {
                 message: 'An error occured. Please try again later'
             })
         })
+}
+
+const deleteRole = async (id: number) => { 
+    fetch(`${api_hostname}role/${id}`, {
+            method: "DELETE"
+        })
+            .then(response => {
+                updating.value = false
+
+                if (response.ok) {
+                    $q.notify({
+                        type: 'positive',
+                        position: 'bottom-right',
+                        message: 'Role deleted'
+                    })
+
+                    getRoles()
+
+                } else
+                    $q.notify({
+                        type: 'negative',
+                        position: 'bottom-right',
+                        message: 'Could not delete role'
+                    })
+            })
+            .catch(() => {
+                $q.notify({
+                    type: 'negative',
+                    position: 'bottom-right',
+                    message: 'An error occured. Please try again later'
+                })
+            })
+}
+
+const deleteClicked = (role: Role) => {
+    deletingRole.value = role
+    showDelete.value = true
 }
 
 onMounted(() => {
