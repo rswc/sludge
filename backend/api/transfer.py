@@ -4,7 +4,7 @@ from .util import get_db, make_dicts
 
 transfer_api = Blueprint('transfer_api', __name__)
 
-@transfer_api.route('/api/transfer', methods=['GET', 'POST'])
+@transfer_api.route('/api/transfer', methods=['GET', 'POST', 'DELETE'])
 def api_transfers():
     if request.method == 'GET':
         get_db().row_factory = make_dicts
@@ -80,6 +80,13 @@ def api_transfers():
             raise
     
         return {'id_transfer': cur.lastrowid}, 201
+    
+    elif request.method == 'DELETE':
+        cur = get_db().cursor()
+        cur.execute('DELETE FROM `transfer`') # SQLite has no TRUNCATE
+        get_db().commit()
+
+        return {}, 200
 
 @transfer_api.route('/api/transfer/<int:id>', methods=['GET'])
 def api_transfer(id):

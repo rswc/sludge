@@ -82,6 +82,8 @@
         </div>
     </q-card>
 
+    <q-btn color="negative" @click="deleteClicked" label="Clear" :disable="updating" />
+
     <Spinner v-if="fetching" />
 
     <div class="row">
@@ -108,6 +110,29 @@
     <div class="row" v-for="transfer in transfers">
         <TransferRow :transfer="transfer" />
     </div>
+
+    <q-dialog v-model="showDelete">
+        <q-card style="min-width: 350px">
+            <q-card-section>
+                <div class="text-h6">Delete all transfers?</div>
+            </q-card-section>
+
+            <q-card-section class="q-pt-none">
+                All {{ transfers.length }} {{ (transfers.length != 1) ? 'transfers' : 'transfer' }}
+                will be deleted.<br>This action cannot be undone.
+            </q-card-section>
+
+            <q-card-actions align="right" class="text-primary">
+                <q-btn flat color="dark" label="Cancel" v-close-popup />
+                <q-btn
+                    flat
+                    color="negative"
+                    label="Delete"
+                    @click="deleteTransfers" 
+                    v-close-popup />
+            </q-card-actions>
+        </q-card>
+    </q-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -140,6 +165,8 @@ const allResources = ref<Resource[]>([])
 const allFacilities = ref<Facility[]>([])
 const allEmployees = ref<Employee[]>([])
 const filteredEmployees = ref<Employee[]>([])
+
+const showDelete = ref(false)
 
 const rules = {
     id_resource: { required },
@@ -285,6 +312,22 @@ const getEmployees = () => {
         })
 }
 
+const deleteTransfers = () => {
+    fetching.value = true
+
+    fetch(`${api_hostname}transfer`, {method: 'DELETE'})
+        .then(response => {
+            getTransfers()
+        })
+        .catch(() => {
+            $q.notify({
+                type: 'negative',
+                position: 'bottom-right',
+                message: 'An error occured. Please try again later'
+            })
+        })
+}
+
 const filterFn = (val: string, update: ((_: () => void) => void)) => {
     if (val === '') {
         update(() => {
@@ -300,6 +343,10 @@ const filterFn = (val: string, update: ((_: () => void) => void)) => {
             return fullName.indexOf(lowerVal) > -1
         })
     })
+}
+
+const deleteClicked = () => {
+    showDelete.value = true
 }
 
 onMounted(() => {
