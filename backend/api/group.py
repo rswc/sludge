@@ -10,7 +10,14 @@ def api_roles():
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `group`')
+        cur.execute('''
+            SELECT id_group, name, severity, COUNT(id_door) AS num_doors, COUNT(id_ap) AS num_aps FROM (
+            SELECT `group`.*, NULL AS id_door, id_ap
+            FROM `Group` JOIN accesspointingroup USING(id_group)
+            UNION ALL 
+            SELECT `group`.*, id_door, NULL AS id_ap FROM `Group` JOIN dooringroup USING(id_group))
+            GROUP BY id_group
+        ''')
 
         res = cur.fetchall()
 

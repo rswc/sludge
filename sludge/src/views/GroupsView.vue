@@ -36,6 +36,12 @@
             Severity
         </div>
         <div class="col fw-bold">
+            Doors
+        </div>
+        <div class="col fw-bold">
+            Access Points
+        </div>
+        <div class="col fw-bold">
             Actions
         </div>
     </div>

@@ -33,6 +33,12 @@
         <div class="col">
             {{ group.severity }}
         </div>
+        <div class="col">
+            {{ group.num_doors }}
+        </div>
+        <div class="col">
+            {{ group.num_aps }}
+        </div>
         <div class="col actions">
             <q-btn outline color="primary" @click="editing = true">Edit</q-btn>
             <q-btn outline color="negative" @click="deleteGroup" :disable="updating">Delete</q-btn>
