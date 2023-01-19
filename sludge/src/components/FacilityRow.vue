@@ -21,6 +21,8 @@
                             @add-door="addDoorClicked"
                             @add-ap="addAPClicked"
                             @internal-changed="internalChanged"
+                            @test-door="emit('testDoor', $event)"
+                            @test-ap="emit('testAp', $event)"
                             ref="roomRows"/>
                     </template>
                 </q-list>
@@ -198,7 +200,7 @@ const props = defineProps<{
     facility: Facility
 }>()
 
-const emit = defineEmits(['changed', 'delete'])
+const emit = defineEmits(['changed', 'delete', 'testDoor', 'testAp'])
 
 const $q = useQuasar()
 

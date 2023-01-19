@@ -7,6 +7,7 @@
         :caption="doorCaption">
         <q-card>
             <q-card-actions>
+                <q-btn color="primary" flat @click="$emit('test', door)">Test access</q-btn>
                 <q-btn color="negative" flat @click="deleteDoor">Delete</q-btn>
             </q-card-actions>
             <q-card-section>
@@ -53,7 +54,7 @@ const props = defineProps<{
     roomId: number
 }>()
 
-const emit = defineEmits(['deleted'])
+const emit = defineEmits(['deleted', 'test'])
 
 const $q = useQuasar()
 

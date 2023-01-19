@@ -15,14 +15,19 @@
             <q-card-section>
                 <q-list bordered class="q-mx-md rounded-borders" v-if="doors.length || aps.length">
                     <template v-for="door in doors">
-                        <DoorRow :door="door" :room-id="room.id_room" @deleted="emit('internalChanged')" />
+                        <DoorRow
+                            :door="door"
+                            :room-id="room.id_room"
+                            @deleted="emit('internalChanged')"
+                            @test="emit('testDoor', $event)" />
                     </template>
                     <template v-for="ap in aps">
                         <AccessPointRow
                             :ap="ap"
                             :room-id="room.id_room"
                             @deleted="emit('internalChanged')"
-                            @changed="emit('internalChanged')" />
+                            @changed="emit('internalChanged')"
+                            @test="emit('testAp', $event)" />
                     </template>
                 </q-list>
                 <i v-else>Nothing to display</i>
@@ -66,11 +71,14 @@ import { onMounted, ref } from 'vue';
 import DoorRow from './DoorRow.vue';
 import AccessPointRow from './AccessPointRow.vue';
 
+
+
+
 const props = defineProps<{
     room: Room
 }>()
 
-const emit = defineEmits(['delete', 'changed', 'addDoor', 'addAp', 'internalChanged'])
+const emit = defineEmits(['delete', 'changed', 'addDoor', 'addAp', 'internalChanged', 'testDoor', 'testAp'])
 
 const $q = useQuasar()
 
