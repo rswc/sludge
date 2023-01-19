@@ -31,9 +31,32 @@
 
     <q-list bordered class="rounded-borders">
         <template v-for="facility in facilities">
-            <FacilityRow :facility="facility" @changed="getFacilities" />
+            <FacilityRow :facility="facility" @changed="getFacilities" @delete="deleteClicked" />
         </template>
     </q-list>
+
+    <q-dialog v-model="showDelete">
+        <q-card style="min-width: 350px">
+            <q-card-section>
+                <div class="text-h6">Delete facility?</div>
+            </q-card-section>
+
+            <q-card-section class="q-pt-none">
+                All of its rooms, doors and devices
+                will also be deleted.<br>This action cannot be undone.
+            </q-card-section>
+
+            <q-card-actions align="right" class="text-primary">
+                <q-btn flat color="dark" label="Cancel" v-close-popup />
+                <q-btn
+                    flat
+                    color="negative"
+                    label="Delete"
+                    @click="deleteFacility(deletingFacility!.id_facility)" 
+                    v-close-popup />
+            </q-card-actions>
+        </q-card>
+    </q-dialog>
 </template>
 
 <script lang="ts" setup>
@@ -57,6 +80,9 @@ const newFacility = ref(new class implements Facility {
 const facilities = ref<Facility[]>([])
 const fetching = ref(true)
 const updating = ref(false)
+
+const showDelete = ref(false)
+const deletingFacility = ref<Facility|null>(null)
 
 const rules = {
     name: { required },
@@ -84,8 +110,9 @@ const getFacilities = () => {
 }
 
 const addFacility = async () => {
-    const isFormCorrect = await v$.value.$validate()
-    if (!isFormCorrect) return
+    await v$.value.$validate()
+    if (!newFacility.value.name) return
+    if (!newFacility.value.address) return
 
     updating.value = true
 
@@ -128,6 +155,43 @@ const addFacility = async () => {
                 message: 'An error occured. Please try again later'
             })
         })
+}
+
+const deleteFacility = async (id: number) => {
+    fetch(`${api_hostname}facility/${id}`, {
+            method: "DELETE"
+        })
+        .then(response => {
+            updating.value = false
+
+            if (response.ok) {
+                $q.notify({
+                    type: 'positive',
+                    position: 'bottom-right',
+                    message: 'Facility deleted'
+                })
+                
+                getFacilities()
+
+            } else
+                $q.notify({
+                    type: 'negative',
+                    position: 'bottom-right',
+                    message: 'Could not delete facility'
+                })
+        })
+        .catch(() => {
+            $q.notify({
+                type: 'negative',
+                position: 'bottom-right',
+                message: 'An error occured. Please try again later'
+            })
+        })
+}
+
+const deleteClicked = (facility: Facility) => {
+    deletingFacility.value = facility
+    showDelete.value = true
 }
 
 onMounted(() => {

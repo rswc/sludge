@@ -10,7 +10,7 @@
                 <q-btn color="primary" flat @click="editClicked">Edit</q-btn>
                 <q-btn color="primary" flat @click="emit('addDoor', room.id_room)">Add door</q-btn>
                 <q-btn color="primary" flat @click="emit('addAp', room.id_room)">Add access point</q-btn>
-                <q-btn color="negative" flat @click="deleteRoom">Delete</q-btn>
+                <q-btn color="negative" flat @click="emit('delete', room)">Delete</q-btn>
             </q-card-actions>
             <q-card-section>
                 <q-list bordered class="q-mx-md rounded-borders" v-if="doors.length || aps.length">
@@ -70,7 +70,7 @@ const props = defineProps<{
     room: Room
 }>()
 
-const emit = defineEmits(['deleted', 'changed', 'addDoor', 'addAp', 'internalChanged'])
+const emit = defineEmits(['delete', 'changed', 'addDoor', 'addAp', 'internalChanged'])
 
 const $q = useQuasar()
 
@@ -99,43 +99,6 @@ const editClicked = () => {
 }
 
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
-
-const deleteRoom = async () => { 
-    if (props.room)
-    {
-        updating.value = true
-
-        fetch(`${api_hostname}room/${props.room.id_room}`, {
-            method: "DELETE"
-        })
-            .then(response => {
-                updating.value = false
-
-                if (response.ok) {
-                    $q.notify({
-                        type: 'positive',
-                        position: 'bottom-right',
-                        message: 'Room deleted'
-                    })
-
-                    emit('deleted', props.room.id_room)
-
-                } else
-                    $q.notify({
-                        type: 'negative',
-                        position: 'bottom-right',
-                        message: 'Could not delete room'
-                    })
-            })
-            .catch(() => {
-                $q.notify({
-                    type: 'negative',
-                    position: 'bottom-right',
-                    message: 'An error occured. Please try again later'
-                })
-            })
-    }
-}
 
 const updateRoom = async () => {
     if (editedRoom.value.id_room >= 0)

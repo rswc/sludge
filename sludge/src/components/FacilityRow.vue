@@ -9,7 +9,7 @@
             <q-card-actions>
                 <q-btn color="primary" flat @click="editClicked">Edit</q-btn>
                 <q-btn color="primary" flat @click="addRoomClicked">Add room</q-btn>
-                <q-btn color="negative" flat @click="deleteFacility">Delete</q-btn>
+                <q-btn color="negative" flat @click="$emit('delete', facility)">Delete</q-btn>
             </q-card-actions>
             <q-card-section>
                 <q-list bordered class="q-mx-md rounded-borders" v-if="facility.rooms?.length">
@@ -17,7 +17,7 @@
                         <RoomRow
                             :room="room"
                             @changed="roomChanged"
-                            @deleted="roomDeleted"
+                            @delete="deleteClicked"
                             @add-door="addDoorClicked"
                             @add-ap="addAPClicked"
                             @internal-changed="internalChanged"
@@ -155,6 +155,29 @@
                 </q-card-actions>
             </q-card>
         </q-dialog>
+
+        <q-dialog v-model="showDelete">
+            <q-card style="min-width: 350px">
+                <q-card-section>
+                    <div class="text-h6">Delete room?</div>
+                </q-card-section>
+
+                <q-card-section class="q-pt-none">
+                    All of its doors and access points
+                    will also be deleted.<br>This action cannot be undone.
+                </q-card-section>
+
+                <q-card-actions align="right" class="text-primary">
+                    <q-btn flat color="dark" label="Cancel" v-close-popup />
+                    <q-btn
+                        flat
+                        color="negative"
+                        label="Delete"
+                        @click="deleteRoom(deletingRoom!.id_room)" 
+                        v-close-popup />
+                </q-card-actions>
+            </q-card>
+        </q-dialog>
     </q-expansion-item>
 </template>
 
@@ -175,7 +198,7 @@ const props = defineProps<{
     facility: Facility
 }>()
 
-const emit = defineEmits(['changed'])
+const emit = defineEmits(['changed', 'delete'])
 
 const $q = useQuasar()
 
@@ -219,6 +242,9 @@ const availableRooms = computed(() => {
     return props.facility.rooms?.filter(v => v.id_room !== newDoor.value.id_room_src)
 })
 
+const showDelete = ref(false)
+const deletingRoom = ref<Room|null>()
+
 const rules = {
     name: { required },
     address: { required }
@@ -248,43 +274,6 @@ const addRoomClicked = () => {
 }
 
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
-
-const deleteFacility = async () => { 
-    if (props.facility)
-    {
-        updating.value = true
-
-        fetch(`${api_hostname}facility/${props.facility.id_facility}`, {
-            method: "DELETE"
-        })
-            .then(response => {
-                updating.value = false
-
-                if (response.ok) {
-                    $q.notify({
-                        type: 'positive',
-                        position: 'bottom-right',
-                        message: 'Facility deleted'
-                    })
-                    
-                    emit('changed')
-
-                } else
-                    $q.notify({
-                        type: 'negative',
-                        position: 'bottom-right',
-                        message: 'Could not delete facility'
-                    })
-            })
-            .catch(() => {
-                $q.notify({
-                    type: 'negative',
-                    position: 'bottom-right',
-                    message: 'An error occured. Please try again later'
-                })
-            })
-    }
-}
 
 const updateFacility = async () => {
     if (editedFacitlity.value.id_facility >= 0)
@@ -494,6 +483,38 @@ const addAP = async () => {
         })
 }
 
+const deleteRoom = async (id: number) => { 
+    fetch(`${api_hostname}room/${id}`, {
+            method: "DELETE"
+        })
+        .then(response => {
+            updating.value = false
+
+            if (response.ok) {
+                $q.notify({
+                    type: 'positive',
+                    position: 'bottom-right',
+                    message: 'Room deleted'
+                })
+
+                roomDeleted(id)
+
+            } else
+                $q.notify({
+                    type: 'negative',
+                    position: 'bottom-right',
+                    message: 'Could not delete room'
+                })
+        })
+        .catch(() => {
+            $q.notify({
+                type: 'negative',
+                position: 'bottom-right',
+                message: 'An error occured. Please try again later'
+            })
+        })
+}
+
 const roomChanged = (newVal: Room) => {
     if (!props.facility.rooms)
         return;
@@ -527,6 +548,11 @@ const addAPClicked = (id: number) => {
         icon = 0
     }()
     addingAP.value = true
+}
+
+const deleteClicked = (room: Room) => {
+    deletingRoom.value = room
+    showDelete.value = true
 }
 
 const internalChanged = () => {
