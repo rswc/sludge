@@ -86,6 +86,10 @@
             </template>
         </q-select>
 
+        <RouterLink to="/employees" custom v-slot="{ navigate }">
+            <q-btn color="dark" flat @click="(navigate as any)">Back</q-btn>
+        </RouterLink>
+
         <q-btn color="primary" type="submit" label="Save" :loading="updating" :disable="updating">
             <template v-slot:loading>
                 <q-spinner />
