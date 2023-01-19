@@ -41,6 +41,9 @@
         </div>
         <div class="col actions">
             <q-btn outline color="primary" @click="editing = true">Edit</q-btn>
+            <RouterLink :to="`/groups/${group.id_group}/rules`" custom v-slot="{ navigate }">
+                <q-btn outline color="primary" @click="(navigate as any)">Rules</q-btn>
+            </RouterLink>
             <q-btn outline color="negative" @click="$emit('delete', group)" :disable="updating">Delete</q-btn>
         </div>
      </template>

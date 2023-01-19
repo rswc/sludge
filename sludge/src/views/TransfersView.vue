@@ -253,7 +253,7 @@ const addTransfer = async () => {
             }
         })
         .catch(() => {
-            fetching.value = false
+            updating.value = false
 
             $q.notify({
                 type: 'negative',

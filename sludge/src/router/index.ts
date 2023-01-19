@@ -30,6 +30,11 @@ const router = createRouter({
       component: () => import('../views/GroupsView.vue')
     },
     {
+      path: '/groups/:id/rules',
+      name: 'groupsRules',
+      component: () => import('../views/GroupsRules.vue')
+    },
+    {
       path: '/resources',
       name: 'resources',
       component: () => import('../views/ResourcesView.vue')

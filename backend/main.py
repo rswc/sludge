@@ -12,6 +12,7 @@ from api.accesspoint import accesspoint_api
 from api.transfer import transfer_api
 from api.event import event_api
 from api.test import test_api
+from api.rule import rule_api
 
 app = Flask(__name__)
 CORS(app, resources=[r'/api/*'])
@@ -28,6 +29,7 @@ app.register_blueprint(accesspoint_api)
 app.register_blueprint(transfer_api)
 app.register_blueprint(event_api)
 app.register_blueprint(test_api)
+app.register_blueprint(rule_api)
 
 
 @app.teardown_appcontext
