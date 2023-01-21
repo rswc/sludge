@@ -11,12 +11,26 @@ def api_doors():
 
         cur = get_db().cursor()
         cur.execute('''
-            SELECT w.c AS num_workers, r.c AS num_rooms, d.c AS num_doors, a.c AS num_aps
+            SELECT
+                w.c AS num_workers,
+                r.c AS num_rooms,
+                d.c AS num_doors, 
+                a.c AS num_aps,
+                acc_granted.c AS times_granted,
+                acc_denied.c AS times_denied
             FROM 
                 (SELECT COUNT(*) AS c FROM `worker`) w,
                 (SELECT COUNT(*) AS c FROM `room`) r,
                 (SELECT COUNT(*) AS c FROM `door`) d,
-                (SELECT COUNT(*) AS c FROM `accesspoint`) a
+                (SELECT COUNT(*) AS c FROM `accesspoint`) a,
+                (
+                    SELECT COUNT(*) AS c FROM `event`
+                    WHERE julianday(CURRENT_TIMESTAMP) - julianday(timestamp) < 1 AND type = 0
+                ) acc_granted,
+                (
+                    SELECT COUNT(*) AS c FROM `event`
+                    WHERE julianday(CURRENT_TIMESTAMP) - julianday(timestamp) < 1 AND type = 1
+                ) acc_denied
         ''')
 
         res = cur.fetchone()

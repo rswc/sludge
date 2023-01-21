@@ -9,8 +9,14 @@ def api_transfers():
     if request.method == 'GET':
         get_db().row_factory = make_dicts
 
+        limit = request.args.get('limit')
+
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `transfer`')
+        cur.execute(f'''
+            SELECT * FROM `transfer`
+            ORDER BY timestamp DESC
+            { f'LIMIT {limit}' if limit else '' }
+        ''')
 
         res = cur.fetchall()
 
