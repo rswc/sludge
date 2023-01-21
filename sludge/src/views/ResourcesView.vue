@@ -28,6 +28,8 @@
         </div>
     </div>
 
+    <q-separator spaced="lg" />
+
     <Spinner v-if="fetching" />
 
     <div class="row" v-for="resource in resources">

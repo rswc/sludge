@@ -56,6 +56,8 @@
         </div>
     </div>
 
+    <q-separator spaced="lg" />
+
     <Spinner v-if="fetching" />
 
     <template v-for="rule in rules">

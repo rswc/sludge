@@ -107,6 +107,8 @@
         </div>
     </div>
 
+    <q-separator spaced="lg" />
+
     <div class="row" v-for="transfer in transfers">
         <TransferRow :transfer="transfer" />
     </div>
