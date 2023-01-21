@@ -73,7 +73,7 @@ def api_transfers():
         
         except sql.IntegrityError:
             get_db().rollback()
-            return {'error': 'transfer with this name already exists'}, 400
+            return {'error': 'Transfer with these parameters already exists'}, 400
 
         except:
             get_db().rollback()

@@ -3,8 +3,8 @@
 
     <q-card flat bordered class="q-ma-md q-gutter-md">
         <h2>New Transfer</h2>
-        <div class="row q-pa-md">
-            <div class="col">
+        <div class="row q-ma-md q-gutter-md">
+            <div class="col q-gutter-md">
                 <q-select
                     outlined
                     v-model="newTransfer.id_resource"
@@ -46,7 +46,7 @@
                 </q-select>
             </div>
                 
-            <div class="col">
+            <div class="col q-gutter-md">
                 <q-select
                     outlined
                     v-model="newTransfer.id_facility_src"
@@ -171,7 +171,7 @@ const showDelete = ref(false)
 const rules = {
     id_resource: { required },
     id_worker: { required },
-    amount: { required, minValue: minValue(0) },
+    amount: { required, minValue: minValue(1e-3) },
     id_facility_src: { required },
     id_facility_dst: { required }
 }
@@ -242,6 +242,19 @@ const addTransfer = async () => {
                         getTransfers()
                     }
                 })
+
+                newTransfer.value = new class implements Transfer {
+                    id_transfer = -1
+                    timestamp = ''
+                    id_resource = undefined as any
+                    id_worker = undefined as any
+                    amount = 0
+                    id_facility_src = undefined as any
+                    id_facility_dst = undefined as any
+                }()
+
+                v$.value.$reset()
+
             } else {
                 response.json().then(response => {
                     $q.notify({
