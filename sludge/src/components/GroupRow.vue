@@ -27,7 +27,7 @@
          </div>
      </template>
      <template v-else>
-        <div class="col">
+        <div class="col-3">
             {{ group.name }}
         </div>
         <div class="col">
@@ -39,7 +39,7 @@
         <div class="col">
             {{ group.num_aps }}
         </div>
-        <div class="col actions">
+        <div class="col-4 actions">
             <q-btn outline color="primary" @click="editing = true">Edit</q-btn>
             <RouterLink :to="`/groups/${group.id_group}/rules`" custom v-slot="{ navigate }">
                 <q-btn outline color="primary" @click="(navigate as any)">Rules</q-btn>

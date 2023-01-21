@@ -8,7 +8,14 @@ import { quasar, transformAssetUrls } from '@quasar/vite-plugin'
 export default defineConfig({
   plugins: [
     vue({
-      template: { transformAssetUrls }
+      template: {
+        transformAssetUrls,
+        compilerOptions: {
+          isCustomElement: (tag) => {
+            return ['Spinner'].includes(tag)
+          }
+        }
+      }
     }),
 
     quasar({

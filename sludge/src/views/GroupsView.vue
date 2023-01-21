@@ -29,7 +29,7 @@
 
     <!-- Header -->
     <div class="row">
-        <div class="col fw-bold">
+        <div class="col-3 fw-bold">
             Group
         </div>
         <div class="col fw-bold">
@@ -41,7 +41,7 @@
         <div class="col fw-bold">
             Access Points
         </div>
-        <div class="col fw-bold">
+        <div class="col-4 fw-bold">
             Actions
         </div>
     </div>

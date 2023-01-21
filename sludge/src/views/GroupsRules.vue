@@ -80,6 +80,7 @@
 </template>
 
 <script lang="ts" setup>
+import type Spinner from '@/components/Spinner.vue';
 import type Group from '@/types/group';
 import type Role from '@/types/role';
 import type Rule from '@/types/rule';
