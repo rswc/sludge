@@ -16,7 +16,8 @@ def api_workers():
             cur.execute(
                 f'''SELECT DISTINCT worker.* FROM worker JOIN roleOfWorker USING(id_worker) 
                 WHERE id_role IN ({','.join(['?'] * len(roles_filter))}) AND LOWER(name) LIKE ? 
-                AND LOWER(surname) LIKE ? AND LOWER(job_title) LIKE ?''',
+                AND LOWER(surname) LIKE ? AND LOWER(job_title) LIKE ?
+                ORDER BY surname ASC, name ASC''',
                 (
                     *roles_filter,
                     f"%{request.args.get('name', '')}%",
@@ -28,7 +29,7 @@ def api_workers():
         else:
             cur.execute(
                 '''SELECT * FROM worker WHERE LOWER(name) LIKE ? AND LOWER(surname) LIKE ?
-                AND LOWER(job_title) LIKE ?''',
+                AND LOWER(job_title) LIKE ? ORDER BY surname ASC, name ASC''',
                 (
                     f"%{request.args.get('name', '')}%",
                     f"%{request.args.get('surname', '')}%",
@@ -42,7 +43,7 @@ def api_workers():
             cur.execute(
                 '''SELECT role.id_role AS id_role, role.name AS name, role.color AS color
                 FROM worker JOIN roleOfWorker USING(id_worker) JOIN role USING(id_role)
-                WHERE id_worker = ?''', 
+                WHERE id_worker = ? ORDER BY role.name ASC''', 
                 (worker['id_worker'],)
             )
 
@@ -105,7 +106,7 @@ def api_worker(id):
         cur.execute(
             '''SELECT role.id_role AS id_role, role.name AS name, role.color AS color
             FROM worker JOIN roleOfWorker USING(id_worker) JOIN role USING(id_role)
-            WHERE id_worker = ?''', 
+            WHERE id_worker = ? ORDER BY role.name ASC''', 
             (id,)
         )
 

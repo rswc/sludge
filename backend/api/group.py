@@ -17,6 +17,7 @@ def api_roles():
             UNION ALL 
             SELECT `group`.*, id_door, NULL AS id_ap FROM `Group` LEFT JOIN dooringroup USING(id_group))
             GROUP BY id_group
+            ORDER BY name
         ''')
 
         res = cur.fetchall()

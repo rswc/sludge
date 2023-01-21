@@ -11,7 +11,7 @@ def api_rooms():
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `room`')
+        cur.execute('SELECT * FROM `room` ORDER BY name')
 
         res = cur.fetchall()
 
@@ -23,7 +23,7 @@ def api_rooms():
                     '''SELECT door.id_door, door.id_room_src, door.id_room_dst,
                     src.name AS src_name, dst.name AS dst_name
                     FROM door JOIN room src ON door.id_room_src = src.id_room JOIN room dst ON door.id_room_dst = dst.id_room
-                    WHERE id_room_src = ? OR id_room_dst = ?''', 
+                    WHERE id_room_src = ? OR id_room_dst = ? ORDER BY dst.name''', 
                     (res['id_room'], res['id_room'])
                 )
 
@@ -34,7 +34,7 @@ def api_rooms():
                 cur.execute(
                     '''SELECT *
                     FROM accesspoint
-                    WHERE id_room = ?''', 
+                    WHERE id_room = ? ORDER BY name''', 
                     (res['id_room'],)
                 )
 

@@ -9,7 +9,7 @@
                 outlined
                 clearable
                 v-model.number="filterData.employee"
-                label="Employee" />
+                label="Employee name" />
             </div>
             
             <div class="col-4">

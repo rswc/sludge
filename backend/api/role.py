@@ -10,7 +10,12 @@ def api_roles():
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT role.*, COUNT(id_worker) AS num_workers FROM role LEFT JOIN roleOfWorker USING(id_role) GROUP BY id_role')
+        cur.execute('''
+            SELECT role.*, COUNT(id_worker) AS num_workers
+            FROM role LEFT JOIN roleOfWorker USING(id_role) 
+            GROUP BY id_role
+            ORDER BY role.name
+        ''')
 
         res = cur.fetchall()
 

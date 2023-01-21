@@ -19,10 +19,9 @@ def api_facilitys():
         if 'rooms' in include:
             for facility in res:
                 cur.execute(
-                    '''SELECT room.id_room AS id_room, room.name AS name, room.id_facility AS id_facility,
-                    room.coordinate_x AS coordinate_x, room.coordinate_y AS coordinate_y
+                    '''SELECT room.*
                     FROM room JOIN facility USING(id_facility)
-                    WHERE id_facility = ?''', 
+                    WHERE id_facility = ? ORDER BY room.name''', 
                     (facility['id_facility'],)
                 )
 
