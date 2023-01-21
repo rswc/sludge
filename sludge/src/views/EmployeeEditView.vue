@@ -1,5 +1,6 @@
 <template>
-    <h1>Employee edit</h1>
+    <h1 v-if="route.params.id === 'add'">Add Employee</h1>
+    <h1 v-else>Edit Employee</h1>
 
     <form v-if="employee" class="q-gutter-md" style="max-width: 500px" @submit.prevent="formSubmit">
         <q-input
@@ -231,7 +232,7 @@ const createEmployee = async () => {
                     message: 'Employee added'
                 })
                 
-                router.push({name: 'employee', params: {id: response.id_worker}})
+                router.push({name: 'employees'})
 
                 getEmployee(response.id_worker)
             }
