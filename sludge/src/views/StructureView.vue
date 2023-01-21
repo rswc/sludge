@@ -75,7 +75,7 @@
 
                 <q-select
                     outlined
-                    v-model="testWorkerId"
+                    v-model="testWorker"
                     :options="filteredEmployees"
                     :option-label="opt => `${opt.name} ${opt.surname}`"
                     use-input
@@ -121,7 +121,7 @@
 
                 <q-select
                     outlined
-                    v-model="testWorkerId"
+                    v-model="testWorker"
                     :options="filteredEmployees"
                     :option-label="opt => `${opt.name} ${opt.surname}`"
                     use-input
@@ -183,7 +183,7 @@ const fetching = ref(true)
 const updating = ref(false)
 const testing = ref(false)
 
-const testWorkerId = ref(-1)
+const testWorker = ref<Employee|null>()
 const showTestDoor = ref(false)
 const testingDoor = ref<Door|null>(null)
 const showTestAP = ref(false)
@@ -321,8 +321,11 @@ const testDoor = () => {
 
     fetch(`${api_hostname}test/door`, {
         method: 'POST',
+        headers: {
+            "Content-Type": "application/json"
+        },
         body: JSON.stringify({
-            id_worker: testWorkerId.value,
+            id_worker: testWorker.value?.id_worker,
             id_door: testingDoor.value?.id_door
         })
     })
@@ -348,7 +351,7 @@ const testAP = () => {
     fetch(`${api_hostname}test/accesspoint`, {
         method: 'POST',
         body: JSON.stringify({
-            id_worker: testWorkerId.value,
+            id_worker: testWorker.value?.id_worker,
             id_ap: testingAP.value?.id_ap
         })
     })
