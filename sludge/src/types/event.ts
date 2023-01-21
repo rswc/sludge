@@ -14,3 +14,15 @@ export default interface Event {
     ap?: AccessPoint,
     door?: Door
 }
+
+const eventTypeName = [
+    'Access Granted',
+    'Access Denied',
+    'Error',
+]
+
+const eventLabel = (type: number) => {
+    return eventTypeName[type]
+}
+
+export { eventTypeName, eventLabel }

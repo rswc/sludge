@@ -50,18 +50,9 @@
 
 <script lang="ts" setup>
 import type Event from '@/types/event';
+import { eventLabel } from '@/types/event';
 import { useQuasar } from 'quasar';
 import { onMounted, ref } from 'vue';
-
-const eventTypeName = [
-    'Access Granted',
-    'Access Denied',
-    'Error',
-]
-
-const eventLabel = (type: number) => {
-    return eventTypeName[type]
-}
 
 
 const fetching = ref(true)
@@ -97,8 +88,8 @@ const getEvents = () => {
 
     fetch(`${api_hostname}event${filterParams()}`)
         .then(response => response.json())
-        .then((response: any[]) => {
-            events.value = response.reverse()
+        .then((response) => {
+            events.value = response
             fetching.value = false
         })
         .catch(() => {

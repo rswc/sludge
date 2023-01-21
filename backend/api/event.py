@@ -9,10 +9,14 @@ def api_events():
     if request.method == 'GET':
         get_db().row_factory = make_dicts
 
+        limit = request.args.get('limit')
+
         cur = get_db().cursor()
-        cur.execute('''
+        cur.execute(f'''
             SELECT `event`.* FROM `event` JOIN worker USING(id_worker)
             WHERE (worker.name LIKE ? OR worker.surname LIKE ?) AND (event.type = ? OR ? IS NULL)
+            ORDER BY timestamp DESC
+            { f'LIMIT {limit}' if limit else '' }
         ''', (
             f"%{request.args.get('employee', '')}%",
             f"%{request.args.get('employee', '')}%",
