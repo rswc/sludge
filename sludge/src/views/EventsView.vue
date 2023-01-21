@@ -37,9 +37,28 @@
                 
                 <q-chip
                     square
+                    icon="person"
                     :ripple="false"
                     class="q-ma-xs">
                     {{ event.worker.name }} {{ event.worker.surname }}
+                </q-chip>
+
+                <q-chip
+                    square
+                    icon="meeting_room"
+                    v-if="event.door"
+                    :ripple="false"
+                    class="q-ma-xs">
+                    {{ event.door.src_name }} &rarr; {{ event.door.dst_name }}
+                </q-chip>
+
+                <q-chip
+                    square
+                    icon="devices"
+                    v-else-if="event.ap"
+                    :ripple="false"
+                    class="q-ma-xs">
+                    {{ event.ap.name }}
                 </q-chip>
                 
                 {{ event.payload }}

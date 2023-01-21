@@ -35,6 +35,26 @@ def api_events():
                     )
             event['worker'] = cur.fetchone()
 
+            if event['id_door'] is not None:
+                cur.execute(
+                    '''SELECT door.*, src.name AS src_name, dst.name AS dst_name
+                    FROM door JOIN room src ON door.id_room_src = src.id_room JOIN room dst ON door.id_room_dst = dst.id_room
+                    WHERE id_door = ?''', 
+                    (event['id_door'],)
+                )
+
+                event['door'] = cur.fetchone()
+            
+            elif event['id_ap'] is not None:
+                cur.execute(
+                    '''SELECT *
+                    FROM `accesspoint`
+                    WHERE id_ap = ?''', 
+                    (event['id_ap'],)
+                )
+
+                event['ap'] = cur.fetchone()
+
         return jsonify(res)
     
     elif request.method == 'POST':
