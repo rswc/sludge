@@ -84,6 +84,11 @@ const v$ = useVuelidate(rules, props.role)
 const api_hostname = import.meta.env.VITE_API_HOSTNAME
 
 const updateRole = async () => {
+    await v$.value.$validate()
+
+    if (!props.role.name) return
+    if (!props.role.color) return
+
     if (props.role)
     {
         updating.value = true
@@ -97,23 +102,27 @@ const updateRole = async () => {
         })
             .then(response => {
                 updating.value = false
-                editing.value = false
-
+                
                 if (response.ok) {
+                    editing.value = false
                     $q.notify({
                         type: 'positive',
                         position: 'bottom-right',
                         message: 'Role updated'
                     })
-
-                } else
-                    $q.notify({
-                        type: 'negative',
-                        position: 'bottom-right',
-                        message: 'Could not update role'
+                    
+                } else {
+                    response.json().then(response => {
+                        $q.notify({
+                            type: 'negative',
+                            position: 'bottom-right',
+                            message: (response.hasOwnProperty('error')) ? response.error : 'Could not update role'
+                        })
                     })
+                }
             })
             .catch(() => {
+                updating.value = false
                 $q.notify({
                     type: 'negative',
                     position: 'bottom-right',

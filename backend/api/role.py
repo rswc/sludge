@@ -83,6 +83,10 @@ def api_role(id):
                 ))
             
             get_db().commit()
+        
+        except sql.IntegrityError:
+            get_db().rollback()
+            return {'error': 'Role with this name already exists'}, 400
 
         except:
             get_db().rollback()
