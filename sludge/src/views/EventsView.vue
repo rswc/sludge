@@ -3,14 +3,16 @@
 
     <q-card flat bordered class="q-ma-md q-gutter-md">
         <h2>Filter</h2>
-        <div class="row q-pa-md">
-            <div class="col q-gutter-md">
+        <div class="row q-ma-md q-gutter-md">
+            <div class="col-4">
                 <q-input
-                    outlined
-                    clearable
-                    v-model.number="filterData.employee"
-                    label="Employee" />
-                
+                outlined
+                clearable
+                v-model.number="filterData.employee"
+                label="Employee" />
+            </div>
+            
+            <div class="col-4">
                 <q-select
                     outlined
                     v-model="filterData.type"
@@ -19,7 +21,9 @@
                     :option-label="eventLabel"
                     label="Type">
                 </q-select>
-
+            </div>
+            
+            <div class="col">
                 <q-btn color="primary" @click="getEvents" label="Filter" :loading="fetching" :disable="fetching">
                     <template v-slot:loading>
                         <q-spinner />
