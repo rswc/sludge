@@ -14,10 +14,19 @@ def api_test_door():
         return 'Missing parameter: id_door', 400
 
     cur = get_db().cursor()
-    cur.execute(
-        'SELECT HasDoorAccess(%s, %s) AS access',
-        (req_json['id_worker'], req_json['id_door'])
-    )
+    
+
+    try:
+        cur.execute(
+            'SELECT HasDoorAccess(%s, %s) AS access',
+            (req_json['id_worker'], req_json['id_door'])
+        )
+            
+        get_db().commit()
+
+    except:
+        get_db().rollback()
+        raise
 
     res = cur.fetchone()
 
@@ -34,10 +43,18 @@ def api_test_ap():
         return 'Missing parameter: id_ap', 400
 
     cur = get_db().cursor()
-    cur.execute(
-        'SELECT HasAPAccess(%s, %s) AS access',
-        (req_json['id_worker'], req_json['id_ap'])
-    )
+    
+    try:
+        cur.execute(
+            'SELECT HasAPAccess(%s, %s) AS access',
+            (req_json['id_worker'], req_json['id_ap'])
+        )
+            
+        get_db().commit()
+
+    except:
+        get_db().rollback()
+        raise
 
     res = cur.fetchone()
 
