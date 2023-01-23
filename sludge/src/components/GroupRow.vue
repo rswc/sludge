@@ -14,6 +14,8 @@
                     v-model.number="(group.severity as any)"
                     type="number"
                     label="Severity"
+                    min="0"
+                    max="5"
                     :error-message="v$.severity.$error ? v$.severity.$errors[0].$message.toString() : ''"
                     :error="v$.severity.$error" />
              </div>
@@ -53,7 +55,7 @@
 <script lang="ts" setup>
 import type Group from '@/types/group';
 import useVuelidate from '@vuelidate/core';
-import { required } from '@vuelidate/validators';
+import { maxValue, minValue, required } from '@vuelidate/validators';
 import { useQuasar } from 'quasar';
 import { ref } from 'vue';
 
@@ -70,7 +72,7 @@ const emit = defineEmits(['delete'])
 
 const rules = {
     name: { required },
-    severity: { required }
+    severity: { required, minValue: minValue(0), maxValue: maxValue(5) }
 }
 
 const v$ = useVuelidate(rules, props.group)
@@ -80,6 +82,10 @@ const api_hostname = import.meta.env.VITE_API_HOSTNAME
 const updateGroup = async () => {
     if (props.group)
     {
+        v$.value.$validate()
+        if (props.group.severity < 0) return
+        if (props.group.severity > 5) return
+        
         updating.value = true
 
         fetch(`${api_hostname}group/${props.group.id_group}`, {

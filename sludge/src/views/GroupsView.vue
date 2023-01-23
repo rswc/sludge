@@ -15,6 +15,8 @@
                 type="number"
                 v-model.number="newGroup.severity"
                 label="Severity"
+                min="0"
+                max="5"
                 :error-message="v$.severity.$error ? v$.severity.$errors[0].$message.toString() : ''"
                 :error="v$.severity.$error">
             </q-input>
