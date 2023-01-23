@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-import sqlite3 as sql
+import psycopg as sql
 from .util import get_db, make_dicts
 
 role_api = Blueprint('role_api', __name__)
@@ -29,9 +29,10 @@ def api_roles():
 
         try:
             cur.execute('''
-                INSERT INTO `role` 
-                (name, color)
-                VALUES (?, ?)
+                INSERT INTO "role" 
+                (id_role, name, color)
+                VALUES (NEXTVAL('role_sequence'), %s, %s)
+                RETURNING *
                 ''',
                 (
                     req_json['name'],
@@ -40,15 +41,17 @@ def api_roles():
             
             get_db().commit()
         
-        except sql.IntegrityError:
+        except sql.errors.UniqueViolation:
             get_db().rollback()
             return {'error': 'Role with this name already exists'}, 400
 
         except:
             get_db().rollback()
             raise
+
+        role = cur.fetchone()
     
-        return {'id_role': cur.lastrowid}, 201
+        return role, 201
 
 @role_api.route('/api/role/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
 def api_role(id):
@@ -56,7 +59,7 @@ def api_role(id):
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `role` WHERE id_role = ?', (id,))
+        cur.execute('SELECT * FROM "role" WHERE id_role = %s', (id,))
 
         res = cur.fetchone()
 
@@ -72,7 +75,7 @@ def api_role(id):
         cur = get_db().cursor()
 
         # Fetch current values
-        cur.execute('SELECT * FROM `role` WHERE id_role = ?', (id,))
+        cur.execute('SELECT * FROM "role" WHERE id_role = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
@@ -80,7 +83,7 @@ def api_role(id):
 
         # Update potential new values, or leave old ones
         try:
-            cur.execute('UPDATE `role` SET (name, color) = (?, ?) WHERE id_role = ?',
+            cur.execute('UPDATE "role" SET (name, color) = (%s, %s) WHERE id_role = %s',
                 (
                     req_json['name'] if 'name' in req_json else res['name'],
                     req_json['color'] if 'color' in req_json else res['color'],
@@ -98,21 +101,21 @@ def api_role(id):
             raise
         
         # Fetch updated values
-        cur.execute('SELECT * FROM `role` WHERE id_role = ?', (id,))
+        cur.execute('SELECT * FROM "role" WHERE id_role = %s', (id,))
 
         return jsonify(cur.fetchone())
     
     elif request.method == 'DELETE':
         cur = get_db().cursor()
 
-        cur.execute('SELECT * FROM `role` WHERE id_role = ?', (id,))
+        cur.execute('SELECT * FROM "role" WHERE id_role = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
             return {'error': 'Not found'}, 404
         
         try:
-            cur.execute('DELETE FROM `role` WHERE id_role = ?', (id,))
+            cur.execute('DELETE FROM "role" WHERE id_role = %s', (id,))
             
             get_db().commit()
 

@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-import sqlite3 as sql
+import psycopg as sql
 from .util import get_db, make_dicts
 
 transfer_api = Blueprint('transfer_api', __name__)
@@ -24,15 +24,15 @@ def api_transfers():
             cur.execute(
                         '''SELECT *
                         FROM "worker"
-                        WHERE id_worker = ?''', 
+                        WHERE id_worker = %s''', 
                         (transfer['id_worker'],)
                     )
             transfer['worker'] = cur.fetchone()
             
             cur.execute(
                         '''SELECT *
-                        FROM "resource"
-                        WHERE id_resource = ?''', 
+                        FROM "Resource"
+                        WHERE id_resource = %s''', 
                         (transfer['id_resource'],)
                     )
             transfer['resource'] = cur.fetchone()
@@ -40,7 +40,7 @@ def api_transfers():
             cur.execute(
                         '''SELECT *
                         FROM "facility"
-                        WHERE id_facility = ?''', 
+                        WHERE id_facility = %s''', 
                         (transfer['id_facility_src'],)
                     )
             transfer['facility_src'] = cur.fetchone()
@@ -48,7 +48,7 @@ def api_transfers():
             cur.execute(
                         '''SELECT *
                         FROM "facility"
-                        WHERE id_facility = ?''', 
+                        WHERE id_facility = %s''', 
                         (transfer['id_facility_dst'],)
                     )
             transfer['facility_dst'] = cur.fetchone()
@@ -64,8 +64,9 @@ def api_transfers():
         try:
             cur.execute('''
                 INSERT INTO "transfer" 
-                (timestamp, id_resource, id_worker, amount, id_facility_src, id_facility_dst)
-                VALUES (CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
+                (id_transfer, timestamp, id_resource, id_worker, amount, id_facility_src, id_facility_dst)
+                VALUES (NEXTVAL('transfer_sequence'), CURRENT_TIMESTAMP, %s, %s, %s, %s, %s)
+                RETURNING *
                 ''',
                 (
                     req_json['id_resource'],
@@ -77,15 +78,17 @@ def api_transfers():
             
             get_db().commit()
         
-        except sql.IntegrityError:
+        except sql.errors.UniqueViolation:
             get_db().rollback()
             return {'error': 'Transfer with these parameters already exists'}, 400
 
         except:
             get_db().rollback()
             raise
+
+        transfer = cur.fetchone()
     
-        return {'id_transfer': cur.lastrowid}, 201
+        return transfer, 201
     
     elif request.method == 'DELETE':
         cur = get_db().cursor()
@@ -100,7 +103,7 @@ def api_transfer(id):
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM "transfer" WHERE id_transfer = ?', (id,))
+        cur.execute('SELECT * FROM "transfer" WHERE id_transfer = %s', (id,))
 
         res = cur.fetchone()
 
@@ -110,15 +113,15 @@ def api_transfer(id):
         cur.execute(
                     '''SELECT *
                     FROM "worker"
-                    WHERE id_worker = ?''', 
+                    WHERE id_worker = %s''', 
                     (res['id_worker'],)
                 )
         res['worker'] = cur.fetchone()
         
         cur.execute(
                     '''SELECT *
-                    FROM "resource"
-                    WHERE id_resource = ?''', 
+                    FROM "Resource"
+                    WHERE id_resource = %s''', 
                     (res['id_resource'],)
                 )
         res['resource'] = cur.fetchone()
@@ -126,7 +129,7 @@ def api_transfer(id):
         cur.execute(
                     '''SELECT *
                     FROM "facility"
-                    WHERE id_facility = ?''', 
+                    WHERE id_facility = %s''', 
                     (res['id_facility_src'],)
                 )
         res['facility_src'] = cur.fetchone()
@@ -134,7 +137,7 @@ def api_transfer(id):
         cur.execute(
                     '''SELECT *
                     FROM "facility"
-                    WHERE id_facility = ?''', 
+                    WHERE id_facility = %s''', 
                     (res['id_facility_dst'],)
                 )
         res['facility_dst'] = cur.fetchone()

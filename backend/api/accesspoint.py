@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify
-import sqlite3 as sql
 from .util import get_db, make_dicts
 
 accesspoint_api = Blueprint('accesspoint_api', __name__)
@@ -10,7 +9,7 @@ def api_accesspoints():
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `accesspoint`')
+        cur.execute('SELECT * FROM "accesspoint"')
 
         res = cur.fetchall()
 
@@ -19,9 +18,9 @@ def api_accesspoints():
         if 'groups' in include:
             for ap in res:
                 cur.execute(
-                        '''SELECT `Group`.*
-                        FROM `Group` JOIN accesspointInGroup USING(id_group)
-                        WHERE id_ap = ?''', 
+                        '''SELECT "Group".*
+                        FROM "Group" JOIN accesspointInGroup USING(id_group)
+                        WHERE id_ap = %s''', 
                         (res['id_ap'],)
                     )
 
@@ -40,9 +39,10 @@ def api_accesspoints():
 
         try:
             cur.execute('''
-                INSERT INTO `accesspoint` 
-                (id_room, name, icon)
-                VALUES (?, ?, ?)
+                INSERT INTO "accesspoint" 
+                (id_ap, id_room, name, icon)
+                VALUES (NEXTVAL('door_sequence'), %s, %s, %s)
+                RETURNING *
                 ''',
                 (
                     req_json['id_room'],
@@ -55,8 +55,10 @@ def api_accesspoints():
         except:
             get_db().rollback()
             raise
+
+        ap = cur.fetchone()
     
-        return {'id_ap': cur.lastrowid}, 201
+        return ap, 201
 
 @accesspoint_api.route('/api/accesspoint/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
 def api_accesspoint(id):
@@ -64,7 +66,7 @@ def api_accesspoint(id):
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `accesspoint` WHERE id_ap = ?', (id,))
+        cur.execute('SELECT * FROM "accesspoint" WHERE id_ap = %s', (id,))
 
         res = cur.fetchone()
 
@@ -75,9 +77,9 @@ def api_accesspoint(id):
 
         if 'groups' in include:
             cur.execute(
-                    '''SELECT `Group`.*
-                    FROM `Group` JOIN accesspointInGroup USING(id_group)
-                    WHERE id_ap = ?''', 
+                    '''SELECT "Group".*
+                    FROM "Group" JOIN accesspointInGroup USING(id_group)
+                    WHERE id_ap = %s''', 
                     (res['id_ap'],)
                 )
 
@@ -92,7 +94,7 @@ def api_accesspoint(id):
         cur = get_db().cursor()
 
         # Fetch current values
-        cur.execute('SELECT * FROM `accesspoint` WHERE id_ap = ?', (id,))
+        cur.execute('SELECT * FROM "accesspoint" WHERE id_ap = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
@@ -105,7 +107,7 @@ def api_accesspoint(id):
             cur.execute(
                 '''SELECT id_group
                 FROM accesspointInGroup
-                WHERE id_ap = ?''', 
+                WHERE id_ap = %s''', 
                 (id,)
             )
 
@@ -113,7 +115,7 @@ def api_accesspoint(id):
             req_groups = [role['id_group'] for role in req_json['groups']]
 
         try:
-            cur.execute('UPDATE `accesspoint` SET (name, icon) = (?, ?) WHERE id_ap = ?',
+            cur.execute('UPDATE "accesspoint" SET (name, icon) = (%s, %s) WHERE id_ap = %s',
                 (
                     req_json['name'] if 'name' in req_json else res['name'],
                     req_json['icon'] if 'icon' in req_json else res['icon'],
@@ -126,12 +128,12 @@ def api_accesspoint(id):
                 # If group is assigned to accesspoint in the database, but not in the request, remove it 
                 for group in groups:
                     if group not in req_groups:
-                        cur.execute('DELETE FROM accesspointInGroup WHERE id_ap = ? AND id_group = ?', (id, group))
+                        cur.execute('DELETE FROM accesspointInGroup WHERE id_ap = %s AND id_group = %s', (id, group))
                 
                 # If group is not assigned to accesspoint in the database, but is in the request, add it 
                 for group in req_groups:
                     if group not in groups:
-                        cur.execute('INSERT INTO accesspointInGroup (id_ap, id_group) VALUES (?, ?)', (id, group))
+                        cur.execute('INSERT INTO accesspointInGroup (id_ap, id_group) VALUES (%s, %s)', (id, group))
             
             get_db().commit()
 
@@ -140,21 +142,21 @@ def api_accesspoint(id):
             raise
         
         # Fetch updated values
-        cur.execute('SELECT * FROM `accesspoint` WHERE id_ap = ?', (id,))
+        cur.execute('SELECT * FROM "accesspoint" WHERE id_ap = %s', (id,))
 
         return jsonify(cur.fetchone())
     
     elif request.method == 'DELETE':
         cur = get_db().cursor()
 
-        cur.execute('SELECT * FROM `accesspoint` WHERE id_ap = ?', (id,))
+        cur.execute('SELECT * FROM "accesspoint" WHERE id_ap = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
             return {'error': 'Not found'}, 404
         
         try:
-            cur.execute('DELETE FROM `accesspoint` WHERE id_ap = ?', (id,))
+            cur.execute('DELETE FROM "accesspoint" WHERE id_ap = %s', (id,))
             
             get_db().commit()
 

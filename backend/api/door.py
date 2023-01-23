@@ -10,7 +10,7 @@ def api_doors():
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `door`')
+        cur.execute('SELECT * FROM "door"')
 
         res = cur.fetchall()
 
@@ -19,9 +19,9 @@ def api_doors():
         if 'groups' in include:
             for door in res:
                 cur.execute(
-                        '''SELECT `Group`.name, `Group`.severity
-                        FROM `Group` JOIN doorInGroup USING(id_group)
-                        WHERE id_door = ?''', 
+                        '''SELECT "Group".*
+                        FROM "Group" JOIN doorInGroup USING(id_group)
+                        WHERE id_door = %s''', 
                         (res['id_door'],)
                     )
 
@@ -42,9 +42,10 @@ def api_doors():
 
         try:
             cur.execute('''
-                INSERT INTO `door` 
-                (id_room_src, id_room_dst)
-                VALUES (?, ?)
+                INSERT INTO "door" 
+                (id_door, id_room_src, id_room_dst)
+                VALUES (NEXTVAL('door_sequence'), %s, %s)
+                RETURNING *
                 ''',
                 (
                     req_json['id_room_src'],
@@ -56,8 +57,10 @@ def api_doors():
         except:
             get_db().rollback()
             raise
+
+        door = cur.fetchone()
     
-        return {'id_door': cur.lastrowid}, 201
+        return door, 201
 
 @door_api.route('/api/door/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
 def api_door(id):
@@ -65,7 +68,7 @@ def api_door(id):
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `door` WHERE id_door = ?', (id,))
+        cur.execute('SELECT * FROM "door" WHERE id_door = %s', (id,))
 
         res = cur.fetchone()
 
@@ -76,9 +79,9 @@ def api_door(id):
 
         if 'groups' in include:
             cur.execute(
-                    '''SELECT `Group`.name, `Group`.severity
-                    FROM `Group` JOIN doorInGroup USING(id_group)
-                    WHERE id_door = ?''', 
+                    '''SELECT "Group".*
+                    FROM "Group" JOIN doorInGroup USING(id_group)
+                    WHERE id_door = %s''', 
                     (res['id_door'],)
                 )
 
@@ -93,7 +96,7 @@ def api_door(id):
         cur = get_db().cursor()
 
         # Fetch current values
-        cur.execute('SELECT * FROM `door` WHERE id_door = ?', (id,))
+        cur.execute('SELECT * FROM "door" WHERE id_door = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
@@ -106,7 +109,7 @@ def api_door(id):
             cur.execute(
                 '''SELECT id_group
                 FROM doorInGroup
-                WHERE id_door = ?''', 
+                WHERE id_door = %s''', 
                 (id,)
             )
 
@@ -123,12 +126,12 @@ def api_door(id):
                 # If group is assigned to door in the database, but not in the request, remove it 
                 for group in groups:
                     if group not in req_groups:
-                        cur.execute('DELETE FROM doorInGroup WHERE id_door = ? AND id_group = ?', (id, group))
+                        cur.execute('DELETE FROM doorInGroup WHERE id_door = %s AND id_group = %s', (id, group))
                 
                 # If group is not assigned to door in the database, but is in the request, add it 
                 for group in req_groups:
                     if group not in groups:
-                        cur.execute('INSERT INTO doorInGroup (id_door, id_group) VALUES (?, ?)', (id, group))
+                        cur.execute('INSERT INTO doorInGroup (id_door, id_group) VALUES (%s, %s)', (id, group))
             
             get_db().commit()
 
@@ -137,21 +140,21 @@ def api_door(id):
             raise
         
         # Fetch updated values
-        cur.execute('SELECT * FROM `door` WHERE id_door = ?', (id,))
+        cur.execute('SELECT * FROM "door" WHERE id_door = %s', (id,))
 
         return jsonify(cur.fetchone())
     
     elif request.method == 'DELETE':
         cur = get_db().cursor()
 
-        cur.execute('SELECT * FROM `door` WHERE id_door = ?', (id,))
+        cur.execute('SELECT * FROM "door" WHERE id_door = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
             return {'error': 'Not found'}, 404
         
         try:
-            cur.execute('DELETE FROM `door` WHERE id_door = ?', (id,))
+            cur.execute('DELETE FROM "door" WHERE id_door = %s', (id,))
             
             get_db().commit()
 

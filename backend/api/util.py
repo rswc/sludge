@@ -5,7 +5,11 @@ from typing import Any, Sequence
 from psycopg import Cursor
 
 def make_dicts(cursor: Cursor[Any]):
-    fields = [c.name for c in cursor.description]
+    if cursor.description is None:
+        fields = []
+    
+    else:
+        fields = [c.name for c in cursor.description]
 
     def make_row(values: Sequence[Any]) -> "dict[str, Any]":
         return dict(zip(fields, values))

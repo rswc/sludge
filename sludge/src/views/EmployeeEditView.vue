@@ -155,6 +155,10 @@ const getRoles = () => {
         })
 }
 
+const dateFormat = (d: Date) => {
+    return `${d.getFullYear()}/${("0"+(d.getMonth()+1)).slice(-2)}/${("0" + d.getDate()).slice(-2)}`
+}
+
 const getEmployee = (id: Number | string) => {
     fetching.value = true
 
@@ -162,6 +166,14 @@ const getEmployee = (id: Number | string) => {
         .then(response => response.json())
         .then(response => {
             employee.value = response
+
+            if (employee.value.date_of_birth) {
+                employee.value.date_of_birth = dateFormat(new Date(employee.value.date_of_birth))
+            }
+            if (employee.value.date_of_expiration) {
+                employee.value.date_of_expiration = dateFormat(new Date(employee.value.date_of_expiration))
+            }
+
             fetching.value = false
         })
         .catch(() => {

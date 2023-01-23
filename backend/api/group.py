@@ -11,11 +11,14 @@ def api_roles():
 
         cur = get_db().cursor()
         cur.execute('''
-            SELECT id_group, name, severity, COUNT(id_door) AS num_doors, COUNT(id_ap) AS num_aps FROM (
-            SELECT `group`.*, NULL AS id_door, id_ap
-            FROM `Group` LEFT JOIN accesspointingroup USING(id_group)
-            UNION ALL 
-            SELECT `group`.*, id_door, NULL AS id_ap FROM `Group` LEFT JOIN dooringroup USING(id_group))
+            SELECT id_group, MAX(name) AS name, MAX(severity) AS severity, COUNT(id_door) AS num_doors, COUNT(id_ap) AS num_aps FROM
+            (
+                SELECT "Group".*, NULL AS id_door, id_ap
+                FROM ("Group" LEFT JOIN accesspointingroup USING(id_group))
+
+                UNION ALL 
+                SELECT "Group".*, id_door, NULL AS id_ap FROM ("Group" LEFT JOIN dooringroup USING(id_group))
+            ) q
             GROUP BY id_group
             ORDER BY name
         ''')
@@ -32,9 +35,10 @@ def api_roles():
 
         try:
             cur.execute('''
-                INSERT INTO `group` 
-                (name, severity)
-                VALUES (?, ?)
+                INSERT INTO "Group" 
+                (id_group, name, severity)
+                VALUES (NEXTVAL('group_sequence'), %s, %s)
+                RETURNING *
                 ''',
                 (
                     req_json['name'],
@@ -43,15 +47,17 @@ def api_roles():
             
             get_db().commit()
         
-        except sql.IntegrityError:
+        except sql.errors.UniqueViolation:
             get_db().rollback()
             return {'error': 'Group with this name already exists'}, 400
 
         except:
             get_db().rollback()
             raise
+
+        group = cur.fetchone()
     
-        return {'id_group': cur.lastrowid}, 201
+        return group, 201
 
 @group_api.route('/api/group/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
 def api_role(id):
@@ -59,7 +65,7 @@ def api_role(id):
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `group` WHERE id_group = ?', (id,))
+        cur.execute('SELECT * FROM "Group" WHERE id_group = %s', (id,))
 
         res = cur.fetchone()
 
@@ -75,7 +81,7 @@ def api_role(id):
         cur = get_db().cursor()
 
         # Fetch current values
-        cur.execute('SELECT * FROM `group` WHERE id_group = ?', (id,))
+        cur.execute('SELECT * FROM "Group" WHERE id_group = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
@@ -83,7 +89,7 @@ def api_role(id):
 
         # Update potential new values, or leave old ones
         try:
-            cur.execute('UPDATE `group` SET (name, severity) = (?, ?) WHERE id_group = ?',
+            cur.execute('UPDATE "Group" SET (name, severity) = (%s, %s) WHERE id_group = %s',
                 (
                     req_json['name'] if 'name' in req_json else res['name'],
                     req_json['severity'] if 'severity' in req_json else res['severity'],
@@ -97,21 +103,21 @@ def api_role(id):
             raise
         
         # Fetch updated values
-        cur.execute('SELECT * FROM `group` WHERE id_group = ?', (id,))
+        cur.execute('SELECT * FROM "Group" WHERE id_group = %s', (id,))
 
         return jsonify(cur.fetchone())
     
     elif request.method == 'DELETE':
         cur = get_db().cursor()
 
-        cur.execute('SELECT * FROM `group` WHERE id_group = ?', (id,))
+        cur.execute('SELECT * FROM "Group" WHERE id_group = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
             return {'error': 'Not found'}, 404
         
         try:
-            cur.execute('DELETE FROM `group` WHERE id_group = ?', (id,))
+            cur.execute('DELETE FROM "Group" WHERE id_group = %s', (id,))
             
             get_db().commit()
 

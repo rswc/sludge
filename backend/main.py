@@ -44,7 +44,8 @@ def close_connection(exception):
         db.close()
 
 @app.route('/')
-def home():
+@app.errorhandler(404)
+def home(*args, **kwargs):
     return app.send_static_file("index.html")
 
 @app.route('/assets/<path:subpath>')

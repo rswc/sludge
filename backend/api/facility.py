@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-import sqlite3 as sql
+import psycopg as sql
 from .util import get_db, make_dicts
 
 facility_api = Blueprint('facility_api', __name__)
@@ -10,7 +10,7 @@ def api_facilitys():
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `facility`')
+        cur.execute('SELECT * FROM "facility"')
 
         res = cur.fetchall()
 
@@ -21,7 +21,7 @@ def api_facilitys():
                 cur.execute(
                     '''SELECT room.*
                     FROM room JOIN facility USING(id_facility)
-                    WHERE id_facility = ? ORDER BY room.name''', 
+                    WHERE id_facility = %s ORDER BY room.name''', 
                     (facility['id_facility'],)
                 )
 
@@ -37,9 +37,10 @@ def api_facilitys():
 
         try:
             cur.execute('''
-                INSERT INTO `facility` 
-                (name, address)
-                VALUES (?, ?)
+                INSERT INTO "facility" 
+                (id_facility, name, address)
+                VALUES (NEXTVAL('facility_sequence'), %s, %s)
+                RETURNING *
                 ''',
                 (
                     req_json['name'],
@@ -48,15 +49,17 @@ def api_facilitys():
             
             get_db().commit()
         
-        except sql.IntegrityError:
+        except sql.errors.UniqueViolation:
             get_db().rollback()
             return {'error': 'Facility with this name already exists'}, 400
 
         except:
             get_db().rollback()
             raise
+
+        facility = cur.fetchone()
     
-        return {'id_facility': cur.lastrowid}, 201
+        return facility, 201
 
 @facility_api.route('/api/facility/<int:id>', methods=['GET', 'PATCH', 'DELETE'])
 def api_facility(id):
@@ -64,7 +67,7 @@ def api_facility(id):
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `facility` WHERE id_facility = ?', (id,))
+        cur.execute('SELECT * FROM "facility" WHERE id_facility = %s', (id,))
 
         res = cur.fetchone()
 
@@ -72,10 +75,9 @@ def api_facility(id):
 
         if 'rooms' in include:
             cur.execute(
-                    '''SELECT room.id_room AS id_room, room.name AS name, room.id_facility AS id_facility,
-                    room.coordinate_x AS coordinate_x, room.coordinate_y AS coordinate_y
+                    '''SELECT room.*
                     FROM room JOIN facility USING(id_facility)
-                    WHERE id_facility = ?''', 
+                    WHERE id_facility = %s''', 
                     (res['id_facility'],)
                 )
 
@@ -93,7 +95,7 @@ def api_facility(id):
         cur = get_db().cursor()
 
         # Fetch current values
-        cur.execute('SELECT * FROM `facility` WHERE id_facility = ?', (id,))
+        cur.execute('SELECT * FROM "facility" WHERE id_facility = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
@@ -101,7 +103,7 @@ def api_facility(id):
 
         # Update potential new values, or leave old ones
         try:
-            cur.execute('UPDATE `facility` SET (name, address) = (?, ?) WHERE id_facility = ?',
+            cur.execute('UPDATE "facility" SET (name, address) = (%s, %s) WHERE id_facility = %s',
                 (
                     req_json['name'] if 'name' in req_json else res['name'],
                     req_json['address'] if 'address' in req_json else res['address'],
@@ -115,21 +117,21 @@ def api_facility(id):
             raise
         
         # Fetch updated values
-        cur.execute('SELECT * FROM `facility` WHERE id_facility = ?', (id,))
+        cur.execute('SELECT * FROM "facility" WHERE id_facility = %s', (id,))
 
         return jsonify(cur.fetchone())
     
     elif request.method == 'DELETE':
         cur = get_db().cursor()
 
-        cur.execute('SELECT * FROM `facility` WHERE id_facility = ?', (id,))
+        cur.execute('SELECT * FROM "facility" WHERE id_facility = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
             return {'error': 'Not found'}, 404
         
         try:
-            cur.execute('DELETE FROM `facility` WHERE id_facility = ?', (id,))
+            cur.execute('DELETE FROM "facility" WHERE id_facility = %s', (id,))
             
             get_db().commit()
 
@@ -145,7 +147,7 @@ def api_facility_rooms(id):
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `room` WHERE id_facility = ?', (id,))
+        cur.execute('SELECT * FROM "room" WHERE id_facility = %s', (id,))
 
         res = cur.fetchall()
 
@@ -159,9 +161,10 @@ def api_facility_rooms(id):
 
         try:
             cur.execute('''
-                INSERT INTO `room` 
-                (name, id_facility, coordinate_x, coordinate_y)
-                VALUES (?, ?, 0, 0)
+                INSERT INTO "room" 
+                (id_room, name, id_facility)
+                VALUES (NEXTVAL('room_sequence'), %s, %s)
+                RETURNING *
                 ''',
                 (
                     req_json['name'],
@@ -173,8 +176,6 @@ def api_facility_rooms(id):
         except:
             get_db().rollback()
             raise
-
-        cur.execute('SELECT * FROM `room` WHERE id_room = ?', (cur.lastrowid,))
 
         res = cur.fetchone()
 

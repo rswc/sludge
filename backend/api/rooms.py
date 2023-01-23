@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-import sqlite3 as sql
+import psycopg as sql
 from .util import get_db, make_dicts
 
 rooms_api = Blueprint('rooms_api', __name__)
@@ -11,7 +11,7 @@ def api_rooms():
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `room` ORDER BY name')
+        cur.execute('SELECT * FROM "room" ORDER BY name')
 
         res = cur.fetchall()
 
@@ -23,7 +23,7 @@ def api_rooms():
                     '''SELECT door.id_door, door.id_room_src, door.id_room_dst,
                     src.name AS src_name, dst.name AS dst_name
                     FROM door JOIN room src ON door.id_room_src = src.id_room JOIN room dst ON door.id_room_dst = dst.id_room
-                    WHERE id_room_src = ? OR id_room_dst = ? ORDER BY dst.name''', 
+                    WHERE id_room_src = %s OR id_room_dst = %s ORDER BY dst.name''', 
                     (res['id_room'], res['id_room'])
                 )
 
@@ -34,7 +34,7 @@ def api_rooms():
                 cur.execute(
                     '''SELECT *
                     FROM accesspoint
-                    WHERE id_room = ? ORDER BY name''', 
+                    WHERE id_room = %s ORDER BY name''', 
                     (res['id_room'],)
                 )
 
@@ -48,7 +48,7 @@ def api_room(id):
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `room` WHERE id_room = ?', (id,))
+        cur.execute('SELECT * FROM "room" WHERE id_room = %s', (id,))
 
         res = cur.fetchone()
 
@@ -62,7 +62,7 @@ def api_room(id):
                     '''SELECT door.id_door, door.id_room_src, door.id_room_dst,
                     src.name AS src_name, dst.name AS dst_name
                     FROM door JOIN room src ON door.id_room_src = src.id_room JOIN room dst ON door.id_room_dst = dst.id_room
-                    WHERE id_room_src = ? OR id_room_dst = ?''', 
+                    WHERE id_room_src = %s OR id_room_dst = %s''', 
                     (res['id_room'], res['id_room'])
                 )
 
@@ -72,7 +72,7 @@ def api_room(id):
             cur.execute(
                     '''SELECT *
                     FROM accesspoint
-                    WHERE id_room = ?''', 
+                    WHERE id_room = %s''', 
                     (res['id_room'],)
                 )
 
@@ -87,7 +87,7 @@ def api_room(id):
         cur = get_db().cursor()
 
         # Fetch current values
-        cur.execute('SELECT * FROM `room` WHERE id_room = ?', (id,))
+        cur.execute('SELECT * FROM "room" WHERE id_room = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
@@ -95,7 +95,7 @@ def api_room(id):
 
         # Update potential new values, or leave old ones
         try:
-            cur.execute('UPDATE `room` SET name = ? WHERE id_room = ?',
+            cur.execute('UPDATE "room" SET name = %s WHERE id_room = %s',
                 (
                     req_json['name'] if 'name' in req_json else res['name'],
                     id
@@ -108,21 +108,21 @@ def api_room(id):
             raise
         
         # Fetch updated values
-        cur.execute('SELECT * FROM `room` WHERE id_room = ?', (id,))
+        cur.execute('SELECT * FROM "room" WHERE id_room = %s', (id,))
 
         return jsonify(cur.fetchone())
     
     elif request.method == 'DELETE':
         cur = get_db().cursor()
 
-        cur.execute('SELECT * FROM `room` WHERE id_room = ?', (id,))
+        cur.execute('SELECT * FROM "room" WHERE id_room = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
             return {'error': 'Not found'}, 404
         
         try:
-            cur.execute('DELETE FROM `room` WHERE id_room = ?', (id,))
+            cur.execute('DELETE FROM "room" WHERE id_room = %s', (id,))
             
             get_db().commit()
 

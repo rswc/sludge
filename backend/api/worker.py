@@ -15,11 +15,11 @@ def api_workers():
         if roles_filter:
             cur.execute(
                 f'''SELECT DISTINCT worker.* FROM worker JOIN roleOfWorker USING(id_worker) 
-                WHERE id_role IN ({','.join(['%s'] * len(roles_filter))}) AND LOWER(name) LIKE %s 
+                WHERE id_role = ANY(%s) AND LOWER(name) LIKE %s 
                 AND LOWER(surname) LIKE %s AND LOWER(job_title) LIKE %s
                 ORDER BY surname ASC, name ASC''',
                 (
-                    *roles_filter,
+                    roles_filter,
                     f"%{request.args.get('name', '')}%",
                     f"%{request.args.get('surname', '')}%",
                     f"%{request.args.get('job_title', '')}%",
@@ -54,14 +54,18 @@ def api_workers():
     elif request.method == 'POST':
         get_db().row_factory = make_dicts
         req_json = request.get_json()
-        
+
         cur = get_db().cursor()
+
+        if 'date_of_expiration' in req_json and req_json['date_of_expiration'] == '':
+            req_json['date_of_expiration'] = None
 
         try:
             cur.execute('''
                 INSERT INTO worker 
-                (name, surname, date_of_birth, job_title, date_of_expiration)
-                VALUES (%s, %s, %s, %s, %s)
+                (id_worker, name, surname, date_of_birth, job_title, date_of_expiration)
+                VALUES (NEXTVAL('worker_sequence'), %s, %s, %s, %s, %s)
+                RETURNING *
                 ''',
                 (
                     req_json['name'],
@@ -73,7 +77,7 @@ def api_workers():
             
             get_db().commit()
 
-            worker_id = cur.lastrowid
+            worker_id = cur.fetchone()['id_worker']
 
         except:
             get_db().rollback()
