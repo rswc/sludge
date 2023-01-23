@@ -200,15 +200,24 @@ const updateEmployee = async () => {
             },
             body: JSON.stringify(employee.value)
         })
-            .then(response => response.json())
             .then(response => {
-                updating.value = false
-
-                $q.notify({
-                    type: 'positive',
-                    position: 'bottom-right',
-                    message: 'Saved'
-                })
+                if (response.ok) {
+                    response.json().then(response => {
+                        $q.notify({
+                            type: 'positive',
+                            position: 'bottom-right',
+                            message: 'Saved'
+                        })
+                    })
+                } else {
+                    response.json().then(response => {
+                        $q.notify({
+                            type: 'negative',
+                            position: 'bottom-right',
+                            message: (response.hasOwnProperty('error')) ? response.error : 'Could not save changes'
+                        })
+                    })
+                }
             })
             .catch(() => {
                 $q.notify({
@@ -233,20 +242,27 @@ const createEmployee = async () => {
         },
         body: JSON.stringify(employee.value)
     })
-        .then(response => response.json())
         .then(response => {
             updating.value = false
-            
-            if (response.hasOwnProperty('id_worker')) {
-                $q.notify({
-                    type: 'positive',
-                    position: 'bottom-right',
-                    message: 'Employee added'
-                })
-                
-                router.push({name: 'employees'})
 
-                getEmployee(response.id_worker)
+            if (response.ok) {
+                response.json().then(response => {
+                    $q.notify({
+                        type: 'positive',
+                        position: 'bottom-right',
+                        message: 'Saved'
+                    })
+
+                    router.push({name: 'employees'})
+                })
+            } else {
+                response.json().then(response => {
+                    $q.notify({
+                        type: 'negative',
+                        position: 'bottom-right',
+                        message: (response.hasOwnProperty('error')) ? response.error : 'Could not add employee'
+                    })
+                })
             }
         })
         .catch(() => {
