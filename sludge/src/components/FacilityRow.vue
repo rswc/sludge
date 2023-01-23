@@ -281,7 +281,9 @@ const updateFacility = async () => {
     if (editedFacitlity.value.id_facility >= 0)
     {
         const isFormCorrect = await v$editFacility.value.$validate()
-        if (!isFormCorrect) return
+
+        if (!editedFacitlity.value.address) return
+        if (!editedFacitlity.value.name) return
 
         updating.value = true
 
