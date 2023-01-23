@@ -19,17 +19,17 @@ def api_doors():
                 acc_granted.c AS times_granted,
                 acc_denied.c AS times_denied
             FROM 
-                (SELECT COUNT(*) AS c FROM `worker`) w,
-                (SELECT COUNT(*) AS c FROM `room`) r,
-                (SELECT COUNT(*) AS c FROM `door`) d,
-                (SELECT COUNT(*) AS c FROM `accesspoint`) a,
+                (SELECT COUNT(*) AS c FROM "worker") w,
+                (SELECT COUNT(*) AS c FROM "room") r,
+                (SELECT COUNT(*) AS c FROM "door") d,
+                (SELECT COUNT(*) AS c FROM "accesspoint") a,
                 (
-                    SELECT COUNT(*) AS c FROM `event`
-                    WHERE julianday(CURRENT_TIMESTAMP) - julianday(timestamp) < 1 AND type = 0
+                    SELECT COUNT(*) AS c FROM "event"
+                    WHERE EXTRACT(DAY FROM (CURRENT_TIMESTAMP - timestamp)) < 1 AND type = 0
                 ) acc_granted,
                 (
-                    SELECT COUNT(*) AS c FROM `event`
-                    WHERE julianday(CURRENT_TIMESTAMP) - julianday(timestamp) < 1 AND type = 1
+                    SELECT COUNT(*) AS c FROM "event"
+                    WHERE EXTRACT(DAY FROM (CURRENT_TIMESTAMP - timestamp)) < 1 AND type = 1
                 ) acc_denied
         ''')
 

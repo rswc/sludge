@@ -1,5 +1,6 @@
 from flask import Flask, render_template, g, request, jsonify
 from flask_cors import CORS
+import yaml
 from api.util import get_db
 from api.role import role_api
 from api.worker import worker_api
@@ -17,6 +18,8 @@ from api.stats import stats_api
 
 app = Flask(__name__)
 CORS(app, resources=[r'/api/*'])
+
+app.config.from_file('config.yaml', load=yaml.safe_load)
 
 
 app.register_blueprint(role_api)
@@ -40,13 +43,6 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
-def init_db():
-    with app.app_context():
-        db = get_db()
-        with app.open_resource('schema.sql', mode='r') as f:
-            db.cursor().executescript(f.read())
-        db.commit()
-
 @app.route('/')
 def home():
     return app.send_static_file("index.html")
@@ -57,6 +53,5 @@ def assets(subpath):
 
 
 if __name__=='__main__':
-    init_db()
     app.run(host='0.0.0.0', port=8000, debug=True)
 

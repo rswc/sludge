@@ -13,7 +13,7 @@ def api_transfers():
 
         cur = get_db().cursor()
         cur.execute(f'''
-            SELECT * FROM `transfer`
+            SELECT * FROM "transfer"
             ORDER BY timestamp DESC
             { f'LIMIT {limit}' if limit else '' }
         ''')
@@ -23,7 +23,7 @@ def api_transfers():
         for transfer in res:
             cur.execute(
                         '''SELECT *
-                        FROM `worker`
+                        FROM "worker"
                         WHERE id_worker = ?''', 
                         (transfer['id_worker'],)
                     )
@@ -31,7 +31,7 @@ def api_transfers():
             
             cur.execute(
                         '''SELECT *
-                        FROM `resource`
+                        FROM "resource"
                         WHERE id_resource = ?''', 
                         (transfer['id_resource'],)
                     )
@@ -39,7 +39,7 @@ def api_transfers():
             
             cur.execute(
                         '''SELECT *
-                        FROM `facility`
+                        FROM "facility"
                         WHERE id_facility = ?''', 
                         (transfer['id_facility_src'],)
                     )
@@ -47,7 +47,7 @@ def api_transfers():
             
             cur.execute(
                         '''SELECT *
-                        FROM `facility`
+                        FROM "facility"
                         WHERE id_facility = ?''', 
                         (transfer['id_facility_dst'],)
                     )
@@ -63,7 +63,7 @@ def api_transfers():
 
         try:
             cur.execute('''
-                INSERT INTO `transfer` 
+                INSERT INTO "transfer" 
                 (timestamp, id_resource, id_worker, amount, id_facility_src, id_facility_dst)
                 VALUES (CURRENT_TIMESTAMP, ?, ?, ?, ?, ?)
                 ''',
@@ -89,7 +89,7 @@ def api_transfers():
     
     elif request.method == 'DELETE':
         cur = get_db().cursor()
-        cur.execute('DELETE FROM `transfer`') # SQLite has no TRUNCATE
+        cur.execute('DELETE FROM "transfer"') # SQLite has no TRUNCATE
         get_db().commit()
 
         return {}, 200
@@ -100,7 +100,7 @@ def api_transfer(id):
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `transfer` WHERE id_transfer = ?', (id,))
+        cur.execute('SELECT * FROM "transfer" WHERE id_transfer = ?', (id,))
 
         res = cur.fetchone()
 
@@ -109,7 +109,7 @@ def api_transfer(id):
 
         cur.execute(
                     '''SELECT *
-                    FROM `worker`
+                    FROM "worker"
                     WHERE id_worker = ?''', 
                     (res['id_worker'],)
                 )
@@ -117,7 +117,7 @@ def api_transfer(id):
         
         cur.execute(
                     '''SELECT *
-                    FROM `resource`
+                    FROM "resource"
                     WHERE id_resource = ?''', 
                     (res['id_resource'],)
                 )
@@ -125,7 +125,7 @@ def api_transfer(id):
         
         cur.execute(
                     '''SELECT *
-                    FROM `facility`
+                    FROM "facility"
                     WHERE id_facility = ?''', 
                     (res['id_facility_src'],)
                 )
@@ -133,7 +133,7 @@ def api_transfer(id):
         
         cur.execute(
                     '''SELECT *
-                    FROM `facility`
+                    FROM "facility"
                     WHERE id_facility = ?''', 
                     (res['id_facility_dst'],)
                 )

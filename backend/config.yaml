@@ -1,0 +1,5 @@
+DB_NAME: 'sludge'
+DB_HOST: 'localhost'
+DB_USER: 'eeyore'
+DB_PASS: 'eeyore'
+DB_PORT: 5433

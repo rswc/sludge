@@ -15,8 +15,8 @@ def api_workers():
         if roles_filter:
             cur.execute(
                 f'''SELECT DISTINCT worker.* FROM worker JOIN roleOfWorker USING(id_worker) 
-                WHERE id_role IN ({','.join(['?'] * len(roles_filter))}) AND LOWER(name) LIKE ? 
-                AND LOWER(surname) LIKE ? AND LOWER(job_title) LIKE ?
+                WHERE id_role IN ({','.join(['%s'] * len(roles_filter))}) AND LOWER(name) LIKE %s 
+                AND LOWER(surname) LIKE %s AND LOWER(job_title) LIKE %s
                 ORDER BY surname ASC, name ASC''',
                 (
                     *roles_filter,
@@ -28,8 +28,8 @@ def api_workers():
 
         else:
             cur.execute(
-                '''SELECT * FROM worker WHERE LOWER(name) LIKE ? AND LOWER(surname) LIKE ?
-                AND LOWER(job_title) LIKE ? ORDER BY surname ASC, name ASC''',
+                '''SELECT * FROM worker WHERE LOWER(name) LIKE %s AND LOWER(surname) LIKE %s
+                AND LOWER(job_title) LIKE %s ORDER BY surname ASC, name ASC''',
                 (
                     f"%{request.args.get('name', '')}%",
                     f"%{request.args.get('surname', '')}%",
@@ -43,7 +43,7 @@ def api_workers():
             cur.execute(
                 '''SELECT role.id_role AS id_role, role.name AS name, role.color AS color
                 FROM worker JOIN roleOfWorker USING(id_worker) JOIN role USING(id_role)
-                WHERE id_worker = ? ORDER BY role.name ASC''', 
+                WHERE id_worker = %s ORDER BY role.name ASC''', 
                 (worker['id_worker'],)
             )
 
@@ -60,8 +60,8 @@ def api_workers():
         try:
             cur.execute('''
                 INSERT INTO worker 
-                (name, surname, date_of_birth, job_title, date_of_expiration, rolling_secret, rolling_counter, otp_secret)
-                VALUES (?, ?, ?, ?, ?, 0, 0, 0)
+                (name, surname, date_of_birth, job_title, date_of_expiration)
+                VALUES (%s, %s, %s, %s, %s)
                 ''',
                 (
                     req_json['name'],
@@ -82,7 +82,7 @@ def api_workers():
         if 'roles' in req_json:
             try:
                 for role in req_json['roles']:
-                    cur.execute('INSERT INTO roleOfWorker (id_worker, id_role) VALUES (?, ?)', (worker_id, role['id_role']))
+                    cur.execute('INSERT INTO roleOfWorker (id_worker, id_role) VALUES (%s, %s)', (worker_id, role['id_role']))
                 
                 get_db().commit()
 
@@ -99,14 +99,14 @@ def api_worker(id):
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM worker WHERE id_worker = ?', (id,))
+        cur.execute('SELECT * FROM worker WHERE id_worker = %s', (id,))
 
         res = cur.fetchone()
 
         cur.execute(
             '''SELECT role.id_role AS id_role, role.name AS name, role.color AS color
             FROM worker JOIN roleOfWorker USING(id_worker) JOIN role USING(id_role)
-            WHERE id_worker = ? ORDER BY role.name ASC''', 
+            WHERE id_worker = %s ORDER BY role.name ASC''', 
             (id,)
         )
 
@@ -124,7 +124,7 @@ def api_worker(id):
         cur = get_db().cursor()
 
         # Fetch current values
-        cur.execute('SELECT * FROM worker WHERE id_worker = ?', (id,))
+        cur.execute('SELECT * FROM worker WHERE id_worker = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
@@ -137,7 +137,7 @@ def api_worker(id):
             cur.execute(
                 '''SELECT id_role
                 FROM roleOfWorker 
-                WHERE id_worker = ?''', 
+                WHERE id_worker = %s''', 
                 (id,)
             )
 
@@ -146,7 +146,7 @@ def api_worker(id):
 
         # Update potential new values, or leave old ones
         try:
-            cur.execute('UPDATE worker SET (name, surname, date_of_birth, job_title, date_of_expiration) = (?, ?, ?, ?, ?) WHERE id_worker = ?',
+            cur.execute('UPDATE worker SET (name, surname, date_of_birth, job_title, date_of_expiration) = (%s, %s, %s, %s, %s) WHERE id_worker = %s',
                 (
                     req_json['name'] if 'name' in req_json else res['name'],
                     req_json['surname'] if 'surname' in req_json else res['surname'],
@@ -162,12 +162,12 @@ def api_worker(id):
                 # If role is assigned to worker in the database, but not in the request, remove it 
                 for role in roles:
                     if role not in req_roles:
-                        cur.execute('DELETE FROM roleOfWorker WHERE id_worker = ? AND id_role = ?', (id, role))
+                        cur.execute('DELETE FROM roleOfWorker WHERE id_worker = %s AND id_role = %s', (id, role))
                 
                 # If role is not assigned to worker in the database, but is in the request, add it 
                 for role in req_roles:
                     if role not in roles:
-                        cur.execute('INSERT INTO roleOfWorker (id_worker, id_role) VALUES  (?, ?)', (id, role))
+                        cur.execute('INSERT INTO roleOfWorker (id_worker, id_role) VALUES  (%s, %s)', (id, role))
             
             get_db().commit()
 
@@ -176,21 +176,21 @@ def api_worker(id):
             raise
         
         # Fetch updated values
-        cur.execute('SELECT * FROM worker WHERE id_worker = ?', (id,))
+        cur.execute('SELECT * FROM worker WHERE id_worker = %s', (id,))
 
         return jsonify(cur.fetchone())
     
     elif request.method == 'DELETE':
         cur = get_db().cursor()
 
-        cur.execute('SELECT * FROM worker WHERE id_worker = ?', (id,))
+        cur.execute('SELECT * FROM worker WHERE id_worker = %s', (id,))
         res = cur.fetchone()
 
         if res is None:
             return {'error': 'Not found'}, 404
         
         try:
-            cur.execute('DELETE FROM worker WHERE id_worker = ?', (id,))
+            cur.execute('DELETE FROM worker WHERE id_worker = %s', (id,))
             
             get_db().commit()
 
@@ -209,10 +209,10 @@ def api_worker_stats(id):
 
         cur = get_db().cursor()        
 
-        cur.execute('SELECT COUNT(*) AS num_events FROM event WHERE id_worker = ?', (id,))
+        cur.execute('SELECT COUNT(*) AS num_events FROM event WHERE id_worker = %s', (id,))
         res['num_events'] = cur.fetchone()['num_events']
 
-        cur.execute('SELECT COUNT(*) AS num_transfers FROM transfer WHERE id_worker = ?', (id,))
+        cur.execute('SELECT COUNT(*) AS num_transfers FROM transfer WHERE id_worker = %s', (id,))
         res['num_transfers'] = cur.fetchone()['num_transfers']
 
         if res is None:
