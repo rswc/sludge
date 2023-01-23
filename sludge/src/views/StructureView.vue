@@ -350,6 +350,9 @@ const testAP = () => {
 
     fetch(`${api_hostname}test/accesspoint`, {
         method: 'POST',
+        headers: {
+            "Content-Type": "application/json"
+        },
         body: JSON.stringify({
             id_worker: testWorker.value?.id_worker,
             id_ap: testingAP.value?.id_ap

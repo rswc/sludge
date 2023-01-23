@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-import sqlite3 as sql
+import psycopg as sql
 from .util import get_db, make_dicts
 
 rule_api = Blueprint('rule_api', __name__)
@@ -13,7 +13,7 @@ def api_roles():
 
         if group:
             cur = get_db().cursor()
-            cur.execute('SELECT * FROM accessrule WHERE id_group = ?', (group,))
+            cur.execute('SELECT * FROM accessrule WHERE id_group = %s', (group,))
         
         else:
             cur = get_db().cursor()
@@ -25,7 +25,7 @@ def api_roles():
             cur.execute(
                 '''SELECT role.*
                 FROM accessrule JOIN role USING(id_role)
-                WHERE id_role = ? AND id_group = ?''', (rule['id_role'], rule['id_group'])
+                WHERE id_role = %s AND id_group = %s''', (rule['id_role'], rule['id_group'])
             )
 
             rule['role'] = cur.fetchone()
@@ -40,9 +40,9 @@ def api_roles():
 
         try:
             cur.execute('''
-                INSERT INTO `accessrule` 
+                INSERT INTO "accessrule" 
                 (id_role, id_group, policy)
-                VALUES (?, ?, ?)
+                VALUES (%s, %s, %s)
                 ''',
                 (
                     req_json['id_role'],
@@ -52,7 +52,7 @@ def api_roles():
             
             get_db().commit()
         
-        except sql.IntegrityError:
+        except sql.errors.UniqueViolation:
             get_db().rollback()
             return {'error': 'Rule binding these two objects already exists'}, 400
 
@@ -68,7 +68,7 @@ def api_role(id_role, id_group):
         get_db().row_factory = make_dicts
 
         cur = get_db().cursor()
-        cur.execute('SELECT * FROM `accessrule` WHERE id_role = ? AND id_group = ?', (id_role, id_group))
+        cur.execute('SELECT * FROM "accessrule" WHERE id_role = %s AND id_group = %s', (id_role, id_group))
 
         res = cur.fetchone()
 
@@ -84,7 +84,7 @@ def api_role(id_role, id_group):
         cur = get_db().cursor()
 
         # Fetch current values
-        cur.execute('SELECT * FROM `accessrule` WHERE id_role = ? AND id_group = ?', (id_role, id_group))
+        cur.execute('SELECT * FROM "accessrule" WHERE id_role = %s AND id_group = %s', (id_role, id_group))
         res = cur.fetchone()
 
         if res is None:
@@ -92,7 +92,7 @@ def api_role(id_role, id_group):
 
         # Update potential new values, or leave old ones
         try:
-            cur.execute('UPDATE `accessrule` SET (policy) = (?) WHERE WHERE id_role = ? AND id_group = ?',
+            cur.execute('UPDATE "accessrule" SET (policy) = (%s) WHERE WHERE id_role = %s AND id_group = %s',
                 (
                     req_json['policy'] if 'policy' in req_json else res['policy'],
                     id_role,
@@ -106,21 +106,21 @@ def api_role(id_role, id_group):
             raise
         
         # Fetch updated values
-        cur.execute('SELECT * FROM `accessrule` WHERE id_role = ? AND id_group = ?', (id_role, id_group))
+        cur.execute('SELECT * FROM "accessrule" WHERE id_role = %s AND id_group = %s', (id_role, id_group))
 
         return jsonify(cur.fetchone())
     
     elif request.method == 'DELETE':
         cur = get_db().cursor()
 
-        cur.execute('SELECT * FROM `accessrule` WHERE id_role = ? AND id_group = ?', (id_role, id_group))
+        cur.execute('SELECT * FROM "accessrule" WHERE id_role = %s AND id_group = %s', (id_role, id_group))
         res = cur.fetchone()
 
         if res is None:
             return {'error': 'Not found'}, 404
         
         try:
-            cur.execute('DELETE FROM `accessrule` WHERE id_role = ? AND id_group = ?', (id_role, id_group))
+            cur.execute('DELETE FROM "accessrule" WHERE id_role = %s AND id_group = %s', (id_role, id_group))
             
             get_db().commit()
 
